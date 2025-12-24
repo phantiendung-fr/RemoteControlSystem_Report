@@ -3,13 +3,6 @@
 \subsection{GetProcesses}
 \begin{enumerate}
     \item \textbf{Mục đích}: Liệt kê tất cả các tiến trình đang chạy trên máy tính từ xa
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/process_flow.png}
-        \caption{Luồng xử lý lệnh GetProcesses}
-        \label{fig:getprocesses_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -33,13 +26,6 @@
 \subsection{KillProcess}
 \begin{enumerate}
     \item \textbf{Mục đích}: Dừng tiến trình từ xa theo Process ID (PID)
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.7\linewidth]{picture/killprocess_flow.png}
-        \caption{Luồng xử lý lệnh KillProcess}
-        \label{fig:killprocess_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -61,13 +47,6 @@
 \subsection{StartApplication}
 \begin{enumerate}
     \item \textbf{Mục đích}: Khởi chạy ứng dụng từ xa trên máy tính mục tiêu
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/startapp_flow.png}
-        \caption{Luồng xử lý lệnh StartApplication}
-        \label{fig:startapp_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -90,13 +69,6 @@
 \subsection{RequestScreenshot}
 \begin{enumerate}
     \item \textbf{Mục đích}: Chụp màn hình máy tính từ xa và gửi ảnh về dashboard
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=1\linewidth]{picture/screenshot_flow.png}
-        \caption{Luồng xử lý lệnh RequestScreenshot}
-        \label{fig:screenshot_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -120,21 +92,7 @@
 \subsection{StartKeylogger / StopKeylogger}
 \begin{enumerate}
     \item \textbf{Mục đích}: Ghi lại và gửi các phím bấm từ máy tính từ xa
-    \item \textbf{Luồng xử lý StartKeylogger}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/start_keylogger_flow.png}
-        \caption{Luồng xử lý lệnh StartKeylogger}
-        \label{fig:start_keylogger_flow}
-    \end{figure}
     
-    \item \textbf{Luồng xử lý StopKeylogger}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.6\linewidth]{picture/stop_keylogger_flow.png}
-        \caption{Luồng xử lý lệnh StopKeylogger}
-        \label{fig:stop_keylogger_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -164,21 +122,7 @@
 \subsection{Shutdown / Restart}
 \begin{enumerate}
     \item \textbf{Mục đích}: Tắt hoặc khởi động lại máy tính từ xa
-    \item \textbf{Luồng xử lý Shutdown}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/shutdown_flow.png}
-        \caption{Luồng xử lý lệnh Shutdown}
-        \label{fig:shutdown_flow}
-    \end{figure}
     
-    \item \textbf{Luồng xử lý Restart}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/restart_flow.png}
-        \caption{Luồng xử lý lệnh Restart}
-        \label{fig:restart_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -204,13 +148,7 @@
 \subsection{SetRegistry}
 \begin{enumerate}
     \item \textbf{Mục đích}: Thay đổi giá trị Windows Registry từ xa
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/setregistry_flow.png}
-        \caption{Luồng xử lý lệnh SetRegistry}
-        \label{fig:setregistry_flow}
-    \end{figure}
+   
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -241,21 +179,7 @@
 \subsection{StartWebcam / StopWebcam}
 \begin{enumerate}
     \item \textbf{Mục đích}: Bật/tắt stream video từ webcam của máy tính từ xa
-    \item \textbf{Luồng xử lý StartWebcam}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/start_webcam_flow.png}
-        \caption{Luồng xử lý lệnh StartWebcam}
-        \label{fig:start_webcam_flow}
-    \end{figure}
     
-    \item \textbf{Luồng xử lý StopWebcam}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.6\linewidth]{picture/stop_webcam_flow.png}
-        \caption{Luồng xử lý lệnh StopWebcam}
-        \label{fig:stop_webcam_flow}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -287,13 +211,7 @@
 \subsection{GetSystemInfo}
 \begin{enumerate}
     \item \textbf{Mục đích}: Thu thập và gửi thông tin hệ thống từ máy tính từ xa
-    \item \textbf{Luồng xử lý}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/systeminfo_flow.png}
-        \caption{Luồng xử lý lệnh GetSystemInfo}
-        \label{fig:systeminfo_flow}
-    \end{figure}
+    
     
     \item \textbf{Thông tin thu thập}:
     \begin{itemize}
@@ -320,13 +238,6 @@
 \subsection{ControlHub Implementation}
 
 \begin{enumerate}
-    \item \textbf{Kiến trúc Hub}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/controlhub_architecture.png}
-        \caption{Kiến trúc SignalR ControlHub}
-        \label{fig:controlhub_architecture}
-    \end{figure}
     
     \item \textbf{Connection Management}:
     \begin{itemize}
@@ -348,13 +259,6 @@
 \subsection{Real-time Data Transfer}
 
 \begin{enumerate}
-    \item \textbf{Base64 Image Transfer Protocol}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/base64_transfer.png}
-        \caption{Luồng truyền ảnh qua Base64 encoding}
-        \label{fig:base64_transfer}
-    \end{figure}
     
     \item \textbf{Đặc điểm kỹ thuật}:
     \begin{itemize}
@@ -377,13 +281,6 @@
 \subsection{Client Connection Management}
 
 \begin{enumerate}
-    \item \textbf{Auto-reconnection Mechanism}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/autoreconnect_flow.png}
-        \caption{Cơ chế tự động kết nối lại của client}
-        \label{fig:autoreconnect_flow}
-    \end{figure}
     
     \item \textbf{Implementation details}:
     \begin{itemize}
@@ -407,13 +304,6 @@
 \subsection{Real-time UI Updates}
 
 \begin{enumerate}
-    \item \textbf{JavaScript SignalR Client}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.9\linewidth]{picture/js_signalr_client.png}
-        \caption{JavaScript SignalR client architecture}
-        \label{fig:js_signalr_client}
-    \end{figure}
     
     \item \textbf{Event Handling}:
     \begin{itemize}
@@ -490,13 +380,6 @@
 \subsection{Error Handling Strategy}
 
 \begin{enumerate}
-    \item \textbf{Comprehensive Error Handling}:
-    \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.8\linewidth]{picture/error_handling.png}
-        \caption{Error handling strategy của hệ thống}
-        \label{fig:error_handling}
-    \end{figure}
     
     \item \textbf{Error Categories}:
     \begin{itemize}
@@ -596,10 +479,4 @@ Hệ thống có thể được sử dụng trong các tình huống:
 
 \vspace{1cm}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\linewidth]{picture/system_overview.png}
-    \caption{Tổng quan kiến trúc hệ thống Remote Control}
-    \label{fig:system_overview}
-\end{figure}
 \end{document}

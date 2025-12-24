@@ -111,13 +111,6 @@ Hệ thống đã triển khai thành công tất cả các tính năng cốt l�
 
 Hệ thống được xây dựng theo mô hình client-server với kiến trúc ba tầng rõ ràng: tầng trình bày (Presentation Layer), tầng nghiệp vụ (Business Layer), và tầng dữ liệu (Data Layer). Mỗi tầng có nhiệm vụ riêng biệt và giao tiếp thông qua các giao thức chuẩn hóa.
 
-\begin{figure}[H]
-\centering
-% \includegraphics[width=\textwidth]{system_architecture.png}
-% \caption{Kiến trúc tổng thể hệ thống Remote Control}
-\label{fig:system_overview_architecture}
-\end{figure}
-
 Tầng trình bày bao gồm Web Dashboard được xây dựng bằng HTML5, Bootstrap 5 và JavaScript, cung cấp giao diện người dùng trực quan và dễ sử dụng. Dashboard tương tác với server thông qua SignalR để nhận và hiển thị dữ liệu thời gian thực.
 
 Tầng nghiệp vụ được triển khai trên ASP.NET Core Server, xử lý tất cả logic nghiệp vụ, quản lý kết nối client, định tuyến lệnh và xử lý dữ liệu. SignalR Hub đóng vai trò trung tâm trong việc quản lý kết nối và truyền tải thông điệp.
@@ -144,13 +137,6 @@ Môi trường phát triển chính là Visual Studio 2022 với .NET 10.0 SDK. 
 \paragraph{SignalR Communication Hub}
 
 ControlHub là trái tim của hệ thống, quản lý tất cả kết nối giữa server và clients. Hub sử dụng ConcurrentDictionary để lưu trữ thông tin các agent đang kết nối, cung cấp các phương thức hai chiều cho việc gửi lệnh và nhận dữ liệu.
-
-\begin{figure}[H]
-\centering
-% \includegraphics[width=0.8\textwidth]{signalr_hub_architecture.png}
-% \caption{Kiến trúc SignalR Hub và luồng dữ liệu}
-\label{fig:signalr_hub}
-\end{figure}
 
 Hub triển khai hai nhóm phương thức chính:
 \begin{itemize}
@@ -204,13 +190,6 @@ Module xử lý exception toàn diện và trả về message lỗi chi tiết �
 \paragraph{Web Dashboard Interface}
 
 Dashboard được xây dựng như một Single Page Application (SPA) với các thành phần chính:
-
-\begin{figure}[H]
-\centering
-% \includegraphics[width=0.9\textwidth]{dashboard_layout.png}
-% \caption{Bố cục và các thành phần của Web Dashboard}
-\label{fig:dashboard_layout}
-\end{figure}
 
 \begin{itemize}
     \item \textbf{Real-time Screen Viewer}: Hiển thị màn hình remote với khả năng capture và download
@@ -378,4 +357,3 @@ Hệ thống có thể được triển khai trong nhiều môi trường khác 
 \end{itemize}
 
 Hệ thống Remote Control đã chứng minh tính hiệu quả trong việc cung cấp giải pháp điều khiển và giám sát từ xa toàn diện. Với kiến trúc module hóa và khả năng mở rộng, hệ thống có thể đáp ứng được nhu cầu của nhiều môi trường triển khai khác nhau.
-
