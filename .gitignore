@@ -1,0 +1,34 @@
+## Core LaTeX files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+## BibTeX / Biber
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+## Latexmk
+latexmkrc
+
+## Intermediate / temp
+*.tmp
+*.bak
+*.swp
+*~
+
+## Build directories
+build/
+out/
+
+## OS files
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,605 @@
+\section{Phân tích chi tiết các lệnh}
+
+\subsection{GetProcesses}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Liệt kê tất cả các tiến trình đang chạy trên máy tính từ xa
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/process_flow.png}
+        \caption{Luồng xử lý lệnh GetProcesses}
+        \label{fig:getprocesses_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng .NET Process API: \texttt{Process.GetProcesses()}
+        \item Lọc các tiến trình hợp lệ (không rỗng tên)
+        \item Format dữ liệu JSON với cấu trúc: \texttt{\{ id: PID, name: "ProcessName" \}}
+        \item Sắp xếp theo tên tiến trình (alphabetical order)
+        \item Truyền qua SignalR với method: \texttt{ReceiveProcesses(object processes)}
+        \item Hiển thị dạng bảng trên dashboard với cột: PID, Tên tiến trình, Actions
+    \end{itemize}
+    
+    \item \textbf{Performance considerations}:
+    \begin{itemize}
+        \item Asynchronous execution để không block main thread
+        \item Memory optimization: Chỉ lấy thông tin cần thiết (PID và Name)
+        \item Error handling: Try-catch bao bọc toàn bộ operation
+        \item Response timeout: 30 giây
+    \end{itemize}
+\end{enumerate}
+
+\subsection{KillProcess}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Dừng tiến trình từ xa theo Process ID (PID)
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\linewidth]{picture/killprocess_flow.png}
+        \caption{Luồng xử lý lệnh KillProcess}
+        \label{fig:killprocess_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng .NET Process API: \texttt{Process.GetProcessById(pid)}
+        \item Phương thức: \texttt{process.Kill()} với force termination
+        \item Validation: Kiểm tra PID hợp lệ và tiến trình tồn tại
+        \item Logging: Ghi lại tên tiến trình và PID đã bị kill
+        \item Error handling: Xử lý các exception như Access Denied, Process not found
+    \end{itemize}
+    
+    \item \textbf{Security considerations}:
+    \begin{itemize}
+        \item Không thể kill system critical processes (cần elevated privileges)
+        \item User confirmation trước khi thực thi từ dashboard
+        \item Logging đầy đủ cho audit trail
+    \end{itemize}
+\end{enumerate}
+
+\subsection{StartApplication}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Khởi chạy ứng dụng từ xa trên máy tính mục tiêu
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/startapp_flow.png}
+        \caption{Luồng xử lý lệnh StartApplication}
+        \label{fig:startapp_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng .NET Process.Start() với ProcessStartInfo
+        \item Cấu hình: \texttt{UseShellExecute = true} để mở file thông thường
+        \item Window style: \texttt{ProcessWindowStyle.Normal}
+        \item Path validation: Kiểm tra đường dẫn hợp lệ
+        \item Error handling: Xử lý FileNotFoundException, Win32Exception
+    \end{itemize}
+    
+    \item \textbf{Supported formats}:
+    \begin{itemize}
+        \item Executable files (.exe, .bat, .cmd)
+        \item Document files (.docx, .pdf, .xlsx) - mở với ứng dụng mặc định
+        \item URL và web links
+        \item Folder paths (mở Explorer)
+    \end{itemize}
+\end{enumerate}
+
+\subsection{RequestScreenshot}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Chụp màn hình máy tính từ xa và gửi ảnh về dashboard
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{picture/screenshot_flow.png}
+        \caption{Luồng xử lý lệnh RequestScreenshot}
+        \label{fig:screenshot_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng Windows Forms API: \texttt{Screen.PrimaryScreen}
+        \item Capture method: \texttt{Graphics.CopyFromScreen()}
+        \item Image format: JPEG với chất lượng tự động (20-40\%)
+        \item Resolution: Full screen với auto-scaling
+        \item Compression: Base64 encoding cho truyền qua SignalR
+        \item Transfer method: \texttt{ReceiveScreenshot(string base64)}
+    \end{itemize}
+    
+    \item \textbf{Performance optimization}:
+    \begin{itemize}
+        \item Tự động tính chất lượng dựa trên độ phân giải
+        \item Memory management: Sử dụng using statement cho Bitmap và Graphics
+        \item Async processing: Không block UI thread
+        \item Size optimization: Tự động resize cho màn hình lớn
+    \end{itemize}
+\end{enumerate}
+
+\subsection{StartKeylogger / StopKeylogger}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Ghi lại và gửi các phím bấm từ máy tính từ xa
+    \item \textbf{Luồng xử lý StartKeylogger}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/start_keylogger_flow.png}
+        \caption{Luồng xử lý lệnh StartKeylogger}
+        \label{fig:start_keylogger_flow}
+    \end{figure}
+    
+    \item \textbf{Luồng xử lý StopKeylogger}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\linewidth]{picture/stop_keylogger_flow.png}
+        \caption{Luồng xử lý lệnh StopKeylogger}
+        \label{fig:stop_keylogger_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng Windows Hook API: \texttt{SetWindowsHookEx(WH\_KEYBOARD\_LL)}
+        \item Hook type: Low-level keyboard hook (system-wide)
+        \item Thread architecture: Chạy trong STA thread riêng với message loop
+        \item Key processing: Xử lý các phím đặc biệt, modifier keys
+        \item Real-time transfer: Gửi từng phím qua SignalR method \texttt{ReceiveKey}
+    \end{itemize}
+    
+    \item \textbf{Key processing logic}:
+    \begin{itemize}
+        \item Detection: Caps Lock và Shift state
+        \item Special keys: Enter, Tab, Backspace, Arrow keys, Function keys
+        \item Modifier keys: Ctrl, Alt, Windows key
+        \item Character conversion: Chuyển đổi key codes thành readable text
+    \end{itemize}
+    
+    \item \textbf{Security and privacy}:
+    \begin{itemize}
+        \item Cần elevated privileges (Administrator)
+        \item Clear indication khi keylogger đang chạy
+        \item Optional: Chỉ ghi log khi có sự đồng ý
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Shutdown / Restart}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Tắt hoặc khởi động lại máy tính từ xa
+    \item \textbf{Luồng xử lý Shutdown}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/shutdown_flow.png}
+        \caption{Luồng xử lý lệnh Shutdown}
+        \label{fig:shutdown_flow}
+    \end{figure}
+    
+    \item \textbf{Luồng xử lý Restart}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/restart_flow.png}
+        \caption{Luồng xử lý lệnh Restart}
+        \label{fig:restart_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng Windows shutdown command với parameters:
+        \begin{itemize}
+            \item Shutdown: \texttt{shutdown /s /t 5 /c "message"}
+            \item Restart: \texttt{shutdown /r /t 5 /c "message"}
+        \end{itemize}
+        \item Delay: 5 giây trước khi thực hiện
+        \item User notification: Hiển thị message cho người dùng
+        \item Process execution: Sử dụng \texttt{Process.Start()}
+    \end{itemize}
+    
+    \item \textbf{Safety features}:
+    \begin{itemize}
+        \item User confirmation trước khi thực thi
+        \item Delay để cho phép hủy bỏ (thông qua \texttt{shutdown /a})
+        \item Logging đầy đủ cho audit purposes
+        \item Chỉ thực thi khi có đủ privileges
+    \end{itemize}
+\end{enumerate}
+
+\subsection{SetRegistry}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Thay đổi giá trị Windows Registry từ xa
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/setregistry_flow.png}
+        \caption{Luồng xử lý lệnh SetRegistry}
+        \label{fig:setregistry_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng .NET Registry API: \texttt{Microsoft.Win32.Registry}
+        \item Supported root keys: HKCU, HKLM, HKCR, HKU, HKCC
+        \item Auto type detection: String, Integer, Boolean, Hexadecimal
+        \item Path handling: Tự động tạo subkey nếu không tồn tại
+        \item Error handling: Xử lý access denied, invalid path
+    \end{itemize}
+    
+    \item \textbf{Registry value type detection}:
+    \begin{itemize}
+        \item Integer: Parse string thành int
+        \item Boolean: "true"/"false" → 1/0
+        \item Hexadecimal: String bắt đầu với "0x"
+        \item String: Mặc định
+    \end{itemize}
+    
+    \item \textbf{Security considerations}:
+    \begin{itemize}
+        \item Limited access: Một số registry keys cần elevated privileges
+        \item Validation: Kiểm tra path hợp lệ trước khi thực thi
+        \item Backup: Khuyến nghị backup registry trước khi thay đổi
+        \item Logging: Ghi lại tất cả thay đổi registry
+    \end{itemize}
+\end{enumerate}
+
+\subsection{StartWebcam / StopWebcam}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Bật/tắt stream video từ webcam của máy tính từ xa
+    \item \textbf{Luồng xử lý StartWebcam}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/start_webcam_flow.png}
+        \caption{Luồng xử lý lệnh StartWebcam}
+        \label{fig:start_webcam_flow}
+    \end{figure}
+    
+    \item \textbf{Luồng xử lý StopWebcam}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\linewidth]{picture/stop_webcam_flow.png}
+        \caption{Luồng xử lý lệnh StopWebcam}
+        \label{fig:stop_webcam_flow}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Sử dụng AForge.Video.DirectShow library
+        \item Camera discovery: \texttt{FilterInfoCollection(FilterCategory.VideoInputDevice)}
+        \item Resolution selection: Tự động chọn resolution ≤ 320×240
+        \item Frame rate control: Giới hạn 5 FPS (200ms interval)
+        \item Image processing: Resize, JPEG compression (40\% quality)
+        \item Real-time transfer: Base64 encoding qua \texttt{ReceiveWebcam}
+    \end{itemize}
+    
+    \item \textbf{Performance optimization}:
+    \begin{itemize}
+        \item Low resolution: Giảm bandwidth sử dụng
+        \item Frame rate limiting: Giảm CPU usage
+        \item JPEG compression: Giảm kích thước ảnh
+        \item Memory management: Proper disposal của Bitmap objects
+    \end{itemize}
+    
+    \item \textbf{Recording features}:
+    \begin{itemize}
+        \item Video recording: Capture và lưu frames
+        \item Frame storage: Lưu tạm trong memory buffer
+        \item Video creation: Tạo video từ captured frames
+        \item Download: Tải video về máy local
+    \end{itemize}
+\end{enumerate}
+
+\subsection{GetSystemInfo}
+\begin{enumerate}
+    \item \textbf{Mục đích}: Thu thập và gửi thông tin hệ thống từ máy tính từ xa
+    \item \textbf{Luồng xử lý}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/systeminfo_flow.png}
+        \caption{Luồng xử lý lệnh GetSystemInfo}
+        \label{fig:systeminfo_flow}
+    \end{figure}
+    
+    \item \textbf{Thông tin thu thập}:
+    \begin{itemize}
+        \item Machine name: \texttt{Environment.MachineName}
+        \item User name: \texttt{Environment.UserName}
+        \item OS version: \texttt{Environment.OSVersion}
+        \item Processor count: \texttt{Environment.ProcessorCount}
+        \item Working set: \texttt{Environment.WorkingSet} (converted to MB)
+        \item System directories: Current, System
+        \item Uptime: \texttt{Environment.TickCount}
+        \item Current time: \texttt{DateTime.Now}
+    \end{itemize}
+    
+    \item \textbf{Data format}:
+    \begin{itemize}
+        \item JSON object với các properties
+        \item Human-readable formatting
+        \item Structured để hiển thị trên dashboard
+    \end{itemize}
+\end{enumerate}
+
+\section{SignalR Communication Architecture}
+
+\subsection{ControlHub Implementation}
+
+\begin{enumerate}
+    \item \textbf{Kiến trúc Hub}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/controlhub_architecture.png}
+        \caption{Kiến trúc SignalR ControlHub}
+        \label{fig:controlhub_architecture}
+    \end{figure}
+    
+    \item \textbf{Connection Management}:
+    \begin{itemize}
+        \item \texttt{ConcurrentDictionary<string, AgentInfo>}: Lưu trữ connected agents
+        \item \texttt{OnConnectedAsync()}: Xử lý khi agent kết nối
+        \item \texttt{OnDisconnectedAsync()}: Xử lý khi agent ngắt kết nối
+        \item Agent info bao gồm: ConnectionId, MachineName, UserName, ConnectedAt
+    \end{itemize}
+    
+    \item \textbf{Message Routing}:
+    \begin{itemize}
+        \item Server-to-Client: \texttt{Clients.All.SendAsync(command, data)}
+        \item Client-to-Server: Các method \texttt{ReceiveX()} (ReceiveScreenshot, ReceiveKey, etc.)
+        \item Broadcast: Gửi đến tất cả connected clients
+        \item Specific client: \texttt{Clients.Client(connectionId).SendAsync()}
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Real-time Data Transfer}
+
+\begin{enumerate}
+    \item \textbf{Base64 Image Transfer Protocol}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/base64_transfer.png}
+        \caption{Luồng truyền ảnh qua Base64 encoding}
+        \label{fig:base64_transfer}
+    \end{figure}
+    
+    \item \textbf{Đặc điểm kỹ thuật}:
+    \begin{itemize}
+        \item Image capture: Sử dụng Bitmap và Graphics APIs
+        \item JPEG compression: Chất lượng 20-40\% tùy độ phân giải
+        \item MemoryStream: Convert Bitmap thành byte array
+        \item Base64 encoding: \texttt{Convert.ToBase64String()}
+        \item SignalR transfer: String message qua WebSocket
+        \item Client-side decoding: \texttt{data:image/jpeg;base64,[data]}
+    \end{itemize}
+    
+    \item \textbf{Performance considerations}:
+    \begin{itemize}
+        \item Message size limit: 50MB (cấu hình trong HubOptions)
+        \item Compression trade-off: Chất lượng vs kích thước
+        \item Bandwidth optimization: Frame rate limiting, resolution scaling
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Client Connection Management}
+
+\begin{enumerate}
+    \item \textbf{Auto-reconnection Mechanism}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/autoreconnect_flow.png}
+        \caption{Cơ chế tự động kết nối lại của client}
+        \label{fig:autoreconnect_flow}
+    \end{figure}
+    
+    \item \textbf{Implementation details}:
+    \begin{itemize}
+        \item SignalR built-in reconnection: \texttt{WithAutomaticReconnect()}
+        \item Exponential backoff: Tăng dần thời gian chờ giữa các lần retry
+        \item Event handlers: \texttt{OnReconnecting}, \texttt{OnReconnected}, \texttt{OnClosed}
+        \item Connection state tracking: Visual indicators trên dashboard
+    \end{itemize}
+    
+    \item \textbf{Error handling}:
+    \begin{itemize}
+        \item Network failures: Tự động retry với backoff strategy
+        \item Server unavailable: Liên tục thử kết nối lại
+        \item Connection state: Hiển thị trạng thái real-time
+        \item User notification: Thông báo khi mất kết nối/kết nối lại
+    \end{itemize}
+\end{enumerate}
+
+\section{Web Dashboard Architecture}
+
+\subsection{Real-time UI Updates}
+
+\begin{enumerate}
+    \item \textbf{JavaScript SignalR Client}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\linewidth]{picture/js_signalr_client.png}
+        \caption{JavaScript SignalR client architecture}
+        \label{fig:js_signalr_client}
+    \end{figure}
+    
+    \item \textbf{Event Handling}:
+    \begin{itemize}
+        \item Connection events: \texttt{onreconnecting}, \texttt{onreconnected}, \texttt{onclose}
+        \item Data events: \texttt{on("ReceiveScreenshot")}, \texttt{on("ReceiveKey")}, etc.
+        \item Command execution: \texttt{connection.invoke(command, data)}
+        \item Error handling: Try-catch với user-friendly messages
+    \end{itemize}
+    
+    \item \textbf{UI Components}:
+    \begin{itemize}
+        \item Screen viewer: Hiển thị ảnh screenshot từ base64
+        \item Webcam viewer: Real-time video stream từ webcam frames
+        \item Keylogger console: Append keystrokes với timestamp
+        \item Process table: Dynamic updates khi có process changes
+        \item System logs: Color-coded log entries
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Data Processing and Storage}
+
+\begin{enumerate}
+    \item \textbf{Client-side Data Processing}:
+    \begin{itemize}
+        \item Image display: \texttt{<img src="data:image/jpeg;base64,[data]">}
+        \item Video recording: Capture webcam frames vào array
+        \item Keylog storage: Append vào textarea với scroll auto
+        \item Process data: Render HTML table từ JSON data
+        \item Statistics: Update counters real-time
+    \end{itemize}
+    
+    \item \textbf{File Download Operations}:
+    \begin{itemize}
+        \item Screenshot download: Tạo <a> element với base64 href
+        \item Keylog export: Tạo Blob từ text content
+        \item Video save: Tạo video từ captured frames
+        \item Automatic cleanup: Remove temporary elements
+    \end{itemize}
+\end{enumerate}
+
+\section{Bảo mật và xử lý lỗi}
+
+\subsection{Security Implementation}
+
+\begin{enumerate}
+    \item \textbf{Current Security Measures}:
+    \begin{itemize}
+        \item Input validation: Kiểm tra tất cả user inputs
+        \item Path sanitization: Ngăn chặn path traversal attacks
+        \item Process authorization: Kiểm tra trước khi kill process
+        \item Error message sanitization: Không expose sensitive information
+        \item Connection validation: Chỉ chấp nhận connections hợp lệ
+    \end{itemize}
+    
+    \item \textbf{Security Limitations}:
+    \begin{itemize}
+        \item No authentication: Bất kỳ ai cũng có thể kết nối
+        \item No encryption: Dữ liệu truyền qua HTTP (không HTTPS)
+        \item CORS AllowAll: Chấp nhận connections từ bất kỳ origin
+        \item No rate limiting: Không giới hạn request rate
+    \end{itemize}
+    
+    \item \textbf{Recommended Security Improvements}:
+    \begin{itemize}
+        \item HTTPS implementation: SSL/TLS encryption
+        \item Authentication system: JWT hoặc Windows Authentication
+        \item Authorization framework: Role-based access control
+        \item IP whitelisting: Chỉ cho phép IP addresses được authorized
+        \item Rate limiting: Ngăn chặn DoS attacks
+        \item Audit logging: Log tất cả actions cho security auditing
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Error Handling Strategy}
+
+\begin{enumerate}
+    \item \textbf{Comprehensive Error Handling}:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{picture/error_handling.png}
+        \caption{Error handling strategy của hệ thống}
+        \label{fig:error_handling}
+    \end{figure}
+    
+    \item \textbf{Error Categories}:
+    \begin{itemize}
+        \item Network errors: Connection failures, timeouts
+        \item System errors: Access denied, file not found, process not found
+        \item Resource errors: Out of memory, camera unavailable
+        \item User errors: Invalid input, insufficient permissions
+    \end{itemize}
+    
+    \item \textbf{Error Recovery Mechanisms}:
+    \begin{itemize}
+        \item Auto-retry: Network operations với exponential backoff
+        \item Graceful degradation: Continue operation khi component fails
+        \item Resource cleanup: Proper disposal trong finally blocks
+        \hline Connection recovery: Tự động reconnect khi mất kết nối
+    \end{itemize}
+    
+    \item \textbf{Logging System}:
+    \begin{itemize}
+        \item Structured logging: Timestamp, log level, message
+        \item Console output: Real-time logging trên server và client
+        \item Dashboard display: Color-coded log entries
+        \hline File logging: Optional log file rotation
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Resource Management}
+
+\begin{enumerate}
+    \item \textbf{Memory Management}:
+    \begin{itemize}
+        \item IDisposable pattern: Tất cả resource-intensive classes implement IDisposable
+        \item Using statements: Đảm bảo proper disposal
+        \item Garbage collection: Manual GC.Collect() khi cần thiết
+        \item Memory limits: Giới hạn buffer sizes để tránh memory leaks
+    \end{itemize}
+    
+    \item \textbf{Thread Management}:
+    \begin{itemize}
+        \item Thread safety: Sử dụng lock, SemaphoreSlim cho synchronization
+        \item Thread termination: Proper thread cleanup khi ứng dụng kết thúc
+        \item Background threads: Sử dụng background threads cho long-running operations
+        \item Thread pooling: .NET ThreadPool cho các tác vụ ngắn
+    \end{itemize}
+    
+    \item \textbf{Network Resource Management}:
+    \begin{itemize}
+        \item Connection pooling: SignalR quản lý connection pool
+        \item Bandwidth throttling: Giới hạn frame rate và image quality
+        \item Timeout handling: Connection và operation timeouts
+        \item Buffer management: Proper buffer allocation và cleanup
+    \end{itemize}
+\end{enumerate}
+
+\section{Kết luận}
+
+Hệ thống Remote Control này thể hiện một kiến trúc client-server hiện đại với:
+
+\begin{itemize}
+    \item \textbf{Real-time Communication}: Sử dụng SignalR cho low-latency, bidirectional communication
+    \item \textbf{Modular Design}: Tách biệt các thành phần (WebcamService, KeyLoggerService, etc.)
+    \item \textbf{Web-based Interface}: Dashboard hiện đại với responsive design
+    \item \textbf{Comprehensive Feature Set}: Đầy đủ các tính năng điều khiển và giám sát từ xa
+    \item \textbf{Cross-platform Support}: .NET 10.0 cho cả server và client
+\end{itemize}
+
+\subsection{Ưu điểm chính}
+
+\begin{itemize}
+    \item \textbf{Dễ sử dụng}: Web dashboard với giao diện trực quan
+    \item \textbf{Hiệu suất cao}: Real-time updates với tối ưu hóa bandwidth
+    \item \textbf{Đáng tin cậy}: Auto-reconnection và comprehensive error handling
+    \item \textbf{Dễ mở rộng}: Kiến trúc module cho phép thêm tính năng mới
+    \item \textbf{Deployment linh hoạt}: Có thể triển khai trên LAN hoặc Internet
+\end{itemize}
+
+\subsection{Hạn chế và hướng phát triển}
+
+\begin{itemize}
+    \item \textbf{Bảo mật}: Cần thêm authentication, authorization, và encryption
+    \item \textbf{Scalability}: Cần distributed architecture cho nhiều agents
+    \item \textbf{Tính năng bổ sung}: Remote shell, file transfer, session recording
+    \item \textbf{Multi-platform}: Hỗ trợ thêm Linux và macOS
+    \item \textbf{Mobile App}: Ứng dụng di động cho remote monitoring
+\end{itemize}
+
+\subsection{Ứng dụng thực tế}
+
+Hệ thống có thể được sử dụng trong các tình huống:
+\begin{itemize}
+    \item IT Help Desk: Hỗ trợ kỹ thuật từ xa
+    \item System Administration: Quản lý nhiều máy tính trong mạng
+    \item Classroom Management: Giám sát phòng máy tính
+    \item Parental Control: Giám sát máy tính gia đình
+    \item Digital Forensics: Thu thập evidence (với proper authorization)
+\end{itemize}
+
+\vspace{1cm}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{picture/system_overview.png}
+    \caption{Tổng quan kiến trúc hệ thống Remote Control}
+    \label{fig:system_overview}
+\end{figure}
+\end{document}

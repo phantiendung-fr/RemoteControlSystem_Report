@@ -1,0 +1,507 @@
+% \section{Bắt phím nhấn - Keylogger}
+
+% \subsection{Giới thiệu}
+
+% Tính năng \textbf{bắt phím nhấn} hay thường được gọi là \textbf{\textit{"Keylogger"}} sử dụng nhằm mục đích thu thập và phân tích hành vi của người dùng.
+
+% \textbf{Keylogger} là một tính năng rất mạnh mẽ, nhưng nếu người sử dụng dùng sai mục đích sẽ tiềm ẩn rủi ro bảo mật cao. Trong dự án này, tính năng \textbf{Keylogger} chỉ dừng lại ở việc dùng trong học tập và nghiên cứu.
+\section{Chức năng}
+
+\subsection{Liệt kê / Khởi chạy / Tạm dừng tiến trình đang chạy trong máy}
+
+\subsubsection{Liệt kê tiến trình:}
+
+\paragraph{Tính năng:}
+\begin{itemize}
+  \item \texttt{PROCESS\_LIST}: Liệt kê các tiến trình đang chạy trên máy \textbf{server}.
+  \item \texttt{EXPORT}: Xuất danh sách các tiến trình đang chạy ra tệp định dạng CSV.
+\end{itemize}
+
+\paragraph{Công nghệ sử dụng:}
+\begin{itemize}
+  \item \textbf{Windows} \texttt{tasklist} để lấy snapshot tiến trình.
+  \item \textbf{C/C++ I/O pipeline}: \texttt{\_popen}/\texttt{\_pclose} đọc \texttt{stdout} của tiến trình con; \texttt{std::ofstream} ghi tệp CSV.
+  \item \textbf{Xử lý chuỗi C++}: \texttt{std::ostringstream}, \texttt{std::istringstream} để ghép dòng, tách token, và định dạng kết quả.
+\end{itemize}
+
+\paragraph{Cách hoạt động:}
+\begin{enumerate}
+    \item Mở pipe chạy lệnh "tasklist/ fo csv" để lấy danh sách tiến trình.
+    \item Đọc output và xử lý (bỏ header, tách tên tiến trình, đếm số lần xuất hiện tiến trình).
+    \item Đóng pipe.
+    \item Xuất ra kết quả, bao gồm liệt kê tiến trình, nếu rỗng thì báo lỗi.
+    \item Mở pipe "tasklist /FO CSV", ghi toàn bộ output vào file định dạng .csv.
+    \item Đóng pipe và file.
+\end{enumerate}
+
+\paragraph{Kết quả trả về:}
+\subparagraph{Kết quả lệnh \texttt{PROCESS\_LIST}}
+\subparagraph{Kết quả lệnh \texttt{EXPORT}}
+
+\subsubsection{Chức năng Start / Stop}
+
+\paragraph{Tính năng:}
+\begin{itemize}
+  \item \textbf{START <filname>}: khởi động một \textbf{tiến trình} theo tên đường dẫn hoặc file .exe.
+  \item \textbf{STOP <filname>}: dừng dịch vụ theo tên đường dẫn hoặc file .exe.
+\end{itemize}
+
+\paragraph{Công nghệ sử dụng:}
+\begin{itemize}
+  \item \textbf{Tiện ích hệ thống Windows}: \texttt{sc.exe} hoặc \texttt{net} để điều khiển dịch vụ; \texttt{sc query} để kiểm tra trạng thái.
+  \item \textbf{C/C++ I/O pipeline}: \texttt{\_popen}/\texttt{\_pclose} đọc \texttt{stdout} của lệnh hệ thống; \texttt{std::string} + \texttt{std::istringstream} để phân tích thông điệp trả về.
+\end{itemize}
+
+\paragraph{Gách hoạt động:}
+\begin{enumerate}
+    \item Ở phần START, ta nhận appPath, sau đó kiểm tra độ dài.
+    \item Chuẩn bị STARTUPFOA si và PROCESS\_INFOMATION pi (đây là các struct chứa thông tin cấu hình về process và luồng).
+    \item Sao chép đường dẫn và gọi CreateProcessA(nullptr, app, ...) để khởi chạy tiến trình.
+    \item Ở phần STOP, ta tạo snapshot tất cả tiến trình bằng 
+    \\hàm CreateToolhelp32Snapshot(TH32CS\_SNAPPROCESS, 0). Nếu lỗi, báo và thoát false
+    \item Duyệt snapshot bằng Process32FirstW/Process32NextW, kiểm tra PID.
+    \item Với từng PID, thử OpenProcess() và TerminateProcess(), nếu ok đánh dấu sucess = true.
+    \item Nếu thất bại, fallback gọi "taskkill /F /PID <pid>' bằng system. Nếu 0, coi như thành công.
+    \item Đóng mọi handle, trả về sucesss nếu ít nhất một PID bị kết thúc.
+\end{enumerate}
+
+\paragraph{Kết quả trả về.}
+\subparagraph{Ví dụ \texttt{START msedge.exe}.}
+
+\subparagraph{Ví dụ \texttt{STOP msedge.exe}.}
+
+\subsection{Liệt kê / Khởi chạy / Tạm dừng ứng dụng}
+
+\subsubsection{Phân biệt giữa Application và Process}
+
+Trong hệ thống này, cần phân biệt rõ ràng giữa hai khái niệm:
+
+\begin{itemize}
+    \item \textbf{Process}: Là một thực thể đang chạy trong hệ điều hành, được quản lý bởi kernel với Process ID (PID) duy nhất. Mỗi process có thể chứa nhiều thread và tài nguyên hệ thống.
+    \item \textbf{Application}: Là một chương trình có giao diện người dùng hoặc service cụ thể, có thể bao gồm một hoặc nhiều process liên quan.
+\end{itemize}
+
+\subsubsection{Kiến trúc quản lý ứng dụng}
+
+Hệ thống sử dụng hai module chính để xử lý:
+
+\begin{enumerate}
+    \item \texttt{app\_control.cpp/.h}: Quản lý ứng dụng ở mức cao (start/stop application)
+    \item \texttt{process\_control.cpp/.h}: Quản lý tiến trình ở mức kernel (list/kill process)
+\end{enumerate}
+
+\subsubsection{Quy trình liệt kê ứng dụng}
+
+Hệ thống thực hiện quét danh sách ứng dụng theo hai phương pháp:
+
+\textbf{Phương pháp 1: Quét Process đang chạy}
+
+Phương pháp này sử dụng Windows API để duyệt qua tất cả các cửa sổ hiện có trong hệ thống và xác định các process tương ứng. Quy trình hoạt động như sau:
+
+\begin{enumerate}
+    \item \textbf{Khởi tạo quá trình duyệt}: Hệ thống gọi hàm \texttt{EnumWindows()} để bắt đầu duyệt qua tất cả các handle cửa sổ (HWND) trong desktop hiện tại.
+    
+    \item \textbf{Callback filtering}: Đối với mỗi cửa sổ được tìm thấy, hàm callback \texttt{EnumWindowsProc} thực hiện hai bước kiểm tra:
+    \begin{itemize}
+        \item Kiểm tra tính khả kiến: \texttt{IsWindowVisible(hwnd)} đảm bảo chỉ xử lý các cửa sổ đang hiển thị
+        \item Kiểm tra tiêu đề: \texttt{GetWindowTextLength(hwnd) > 0} lọc ra các cửa sổ có tiêu đề (loại bỏ các cửa sổ hệ thống ẩn)
+    \end{itemize}
+    
+    \item \textbf{Ánh xạ Window-to-Process}: Sau khi xác định cửa sổ hợp lệ, hệ thống sử dụng \texttt{GetWindowThreadProcessId()} để lấy Process ID (PID) tương ứng với handle cửa sổ đó.
+    
+    \item \textbf{Thu thập thông tin}: Thông tin process (PID, tên, đường dẫn) được lưu trữ vào cấu trúc dữ liệu \texttt{vector<ProcessInfo>} để quản lý tập trung.
+    
+    \item \textbf{Tiếp tục duyệt}: Hàm callback trả về \texttt{TRUE} để tiếp tục quá trình enumeration cho đến khi duyệt hết tất cả các cửa sổ.
+\end{enumerate}
+
+\textbf{Ưu điểm}: Phương pháp này hiệu quả trong việc tìm các ứng dụng có giao diện người dùng đang hoạt động.
+
+\textbf{Hạn chế}: Không phát hiện được các service hoặc process chạy ngầm không có cửa sổ hiển thị.
+
+\vspace{0.5cm}
+
+\textbf{Phương pháp 2: Quét Applications thông qua Registry và WMI}
+
+Phương pháp này kết hợp hai nguồn dữ liệu khác nhau để có cái nhìn toàn diện về các ứng dụng trong hệ thống:
+
+\begin{enumerate}
+    \item \textbf{Quét Registry cho ứng dụng đã cài đặt}:
+    \begin{itemize}
+        \item Truy cập khóa registry: \texttt{HKEY\_LOCAL\_MACHINE\textbackslash SOFTWARE\textbackslash Microsoft\textbackslash Windows\textbackslash CurrentVersion\textbackslash Uninstall}
+        \item Duyệt qua từng subkey để lấy danh sách các chương trình đã được cài đặt chính thức
+        \item Thu thập metadata: tên ứng dụng, phiên bản, đường dẫn executable, thông tin nhà phát triển
+    \end{itemize}
+    
+    \item \textbf{Truy vấn WMI cho process đang chạy}:
+    \begin{itemize}
+        \item Thực hiện câu lệnh WQL: \texttt{SELECT * FROM Win32\_Process WHERE SessionId > 0}
+        \item Điều kiện \texttt{SessionId > 0} lọc ra các process thuộc user session (loại bỏ system process)
+        \item Lấy thông tin realtime: PID, executable path, command line, memory usage
+    \end{itemize}
+    
+    \item \textbf{Tích hợp và lọc dữ liệu}:
+    \begin{itemize}
+        \item So sánh và ghép nối thông tin từ hai nguồn dựa trên đường dẫn executable
+        \item Áp dụng bộ lọc để chỉ giữ lại các ứng dụng có giao diện người dùng (GUI applications)
+        \item Loại bỏ duplicates và system processes không cần thiết
+    \end{itemize}
+    
+    \item \textbf{Tạo danh sách tổng hợp}:
+    \begin{itemize}
+        \item Kết hợp thông tin static (từ Registry) và dynamic (từ WMI)
+        \item Phân loại ứng dụng theo trạng thái: đang chạy, đã cài đặt nhưng không chạy
+        \item Cung cấp thông tin đầy đủ cho việc quản lý: start, stop, uninstall
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Ưu điểm}: 
+\begin{itemize}
+    \item Cung cấp thông tin toàn diện về cả ứng dụng đang chạy và đã cài đặt
+    \item Có metadata chi tiết từ Registry
+    \item Phát hiện được cả GUI applications và background services
+\end{itemize}
+
+\textbf{Hạn chế}: 
+\begin{itemize}
+    \item Tốc độ chậm hơn do phải truy cập nhiều nguồn dữ liệu
+    \item Yêu cầu quyền administrative để truy cập một số thông tin WMI
+\end{itemize}
+\newpage
+\subsubsection{Cơ chế khởi chạy ứng dụng}
+
+Hệ thống hỗ trợ nhiều phương thức khởi chạy:
+
+\begin{figure}[H]
+\centering
+\tikzset{
+    startstop/.style = {ellipse, draw, fill=red!20, 
+                        minimum height=1cm, text centered},
+    decision/.style  = {diamond, draw, fill=green!20, 
+                        text width=5em, text centered, aspect=2},
+    process/.style   = {rectangle, draw, fill=blue!20, 
+                        minimum height=1cm, text centered},
+    arrow/.style     = {thick, ->, >=stealth}
+}
+
+\begin{tikzpicture}[node distance=1.5cm and 2cm]
+    % Đặt các node
+    \node (start) [startstop] {Yêu cầu khởi chạy app};
+    
+    % Sử dụng cú pháp mới "below=of..." thay cho "below of=..."
+    \node (check) [decision, below=of start, yshift=-0.5cm] {Kiểm tra đường dẫn};
+    
+    \node (method1) [process, below left=of check] {ShellExecute()};
+    \node (method2) [process, below right=of check] {CreateProcess()};
+    
+    % Đặt node verify tương đối với cả hai node trên để căn chỉnh
+    \node (verify) [process, below=of check, yshift=-3cm] {Xác nhận khởi chạy};
+    
+    \node (end) [startstop, below=of verify] {Trả về kết quả};
+
+    % Vẽ các đường nối
+    \draw [arrow] (start) -- (check);
+    
+    % Cách vẽ đường rẽ nhánh từ khối decision đẹp hơn
+    \draw [arrow] (check.west) -- ++ (-0.5,0) |- (method1) node[near start, left] {Có Path};
+    \draw [arrow] (check.east) -- ++ (0.5,0)  |- (method2) node[near start, right] {Path đầy đủ};
+
+    \draw [arrow] (method1) -- (verify);
+    \draw [arrow] (method2) -- (verify);
+    \draw [arrow] (verify) -- (end);
+\end{tikzpicture}
+\caption{Quy trình khởi chạy ứng dụng}
+\end{figure}
+\subsubsection{Logic khởi chạy ứng dụng}
+
+Hàm \texttt{LaunchApplication} triển khai cơ chế khởi chạy ứng dụng theo hai phương pháp dự phòng:
+
+\textbf{Phương pháp 1: ShellExecute API}
+
+Hệ thống ưu tiên sử dụng \texttt{ShellExecuteA} để tận dụng cơ chế liên kết file của Windows:
+\begin{itemize}
+    \item Gọi API với tham số "open" để mở file/ứng dụng theo association mặc định
+    \item Kiểm tra giá trị trả về: nếu $> 32$ thì thành công, ngược lại là mã lỗi
+    \item Phương pháp này tự động xử lý các file đã được liên kết với ứng dụng cụ thể
+\end{itemize}
+
+\textbf{Phương pháp 2: CreateProcess API (Fallback)}
+
+Nếu \texttt{ShellExecute} thất bại, hệ thống chuyển sang phương pháp tạo process trực tiếp:
+\begin{enumerate}
+    \item Khởi tạo cấu trúc \texttt{STARTUPINFO} và \texttt{PROCESS\_INFORMATION}
+    \item Tạo chuỗi command line bằng cách kết hợp đường dẫn và tham số
+    \item Gọi \texttt{CreateProcessA} để tạo process mới với các handle quản lý
+    \item Đóng handle process và thread ngay sau khi tạo thành công để tránh resource leak
+\end{enumerate}
+
+\textbf{Logic quyết định:}
+\begin{equation}
+\text{Kết quả khởi chạy} = \begin{cases}
+\text{SUCCESS} & \text{nếu ShellExecute thành công} \\
+\text{SUCCESS} & \text{nếu ShellExecute thất bại nhưng CreateProcess thành công} \\
+\text{FAILED} & \text{nếu cả hai phương pháp đều thất bại}
+\end{cases}
+\end{equation}
+
+\subsubsection{Logic tạm dừng ứng dụng}
+
+Hệ thống triển khai hai chiến lược dừng ứng dụng với mức độ "mềm" và "cứng":
+
+\textbf{Graceful Shutdown (Dừng mềm)}
+
+Quy trình dừng an toàn tuân theo nguyên tắc "lịch sự" với ứng dụng:
+
+\begin{enumerate}
+    \item \textbf{Tìm cửa sổ chính:} Sử dụng Process ID để xác định handle cửa sổ chính của ứng dụng
+    \item \textbf{Gửi tín hiệu đóng:} Gửi message \texttt{WM\_CLOSE} đến cửa sổ chính, tương đương với việc người dùng nhấn nút "X"
+    \item \textbf{Chờ đợi có timeout:} Mở handle đồng bộ với process và chờ tối đa 5 giây
+    \item \textbf{Xác nhận kết quả:} Kiểm tra trạng thái \texttt{WAIT\_OBJECT\_0} để xác nhận process đã kết thúc
+\end{enumerate}
+
+Ưu điểm của phương pháp này:
+\begin{itemize}
+    \item Cho phép ứng dụng lưu dữ liệu trước khi thoát
+    \item Thực hiện cleanup tài nguyên một cách chính xác
+    \item Tránh corrupted data và memory leak
+\end{itemize}
+
+\textbf{Force Terminate (Dừng cứng)}
+
+Khi phương pháp mềm thất bại hoặc trong trường hợp khẩn cấp:
+
+\begin{enumerate}
+    \item \textbf{Mở handle process:} Yêu cầu quyền \texttt{PROCESS\_TERMINATE} từ hệ điều hành
+    \item \textbf{Kết thúc ngay lập tức:} Gọi \texttt{TerminateProcess} với exit code = 1
+    \item \textbf{Giải phóng handle:} Đóng handle process để tránh resource leak
+\end{enumerate}
+
+\textbf{Ma trận quyết định dừng ứng dụng:}
+
+\begin{table}[h]
+\centering
+\caption{Chiến lược dừng ứng dụng}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Tình huống} & \textbf{Graceful} & \textbf{Force} & \textbf{Kết quả} \\
+\hline
+Ứng dụng phản hồi bình thường & \checkmark & - & An toàn \\
+Ứng dụng đóng băng (freeze) & $\times$ & \checkmark & Khẩn cấp \\
+Process không có UI & $\times$ & \checkmark & Trực tiếp \\
+Service/Background process & $\times$ & \checkmark & Hệ thống \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+\textbf{Quy trình tổng thể:}
+
+\begin{figure}[h]
+\centering
+% Định nghĩa các kiểu dáng cho khối và mũi tên
+\tikzset{
+    startstop/.style = {ellipse, draw, fill=red!20, 
+                        minimum height=1cm, text centered},
+    decision/.style  = {diamond, draw, fill=green!20, 
+                        text width=5em, text centered, aspect=2},
+    process/.style   = {rectangle, draw, fill=blue!20, 
+                        minimum height=1cm, text centered},
+    arrow/.style     = {thick, -{Stealth[]}}
+}
+
+% Bắt đầu vẽ, thiết lập khoảng cách mặc định giữa các node
+\begin{tikzpicture}[node distance=1.5cm and 2.5cm]
+    % Đặt các node
+    \node (start) [startstop] {Yêu cầu dừng app};
+    
+    % Sử dụng cú pháp mới "below=of..."
+    \node (graceful) [process, below=of start] {Thử Graceful Shutdown};
+    \node (check1) [decision, below=of graceful] {Thành công?};
+    \node (force) [process, below=of check1, yshift=-0.5cm] {Force Terminate};
+    \node (check2) [decision, below=of force] {Thành công?};
+    
+    % Đặt các node kết thúc tương đối với các node quyết định
+    \node (success) [startstop, left=of force] {Hoàn thành};
+    \node (fail) [startstop, right=of check2] {Lỗi hệ thống};
+
+    % Vẽ các đường nối
+    \draw [arrow] (start) -- (graceful);
+    \draw [arrow] (graceful) -- (check1);
+    
+    % Vẽ đường rẽ nhánh vuông góc để lưu đồ rõ ràng hơn
+    \draw [arrow] (check1.west) -- ++ (-1,0) |- (success) node[near start, left] {Có} (success);
+    \draw [arrow] (check1.south) -- node[left] {Không} (force);
+    
+    \draw [arrow] (force) -- (check2);
+    
+    % Nối nhánh "Có" của check2 tới cùng node "Hoàn thành"
+    \draw [arrow] (check2.west) -- ++ (-1,0) |- (success) node[near start, left] {Có} (success);
+    \draw [arrow] (check2.east) -- node[above] {Không} (fail);
+\end{tikzpicture}
+\caption{Workflow dừng ứng dụng}
+\end{figure}
+
+\subsubsection{Giao tiếp Client-Server}
+
+Hệ thống sử dụng protocol tùy chỉnh để truyền lệnh quản lý ứng dụng:
+
+\begin{center}
+    \begin{table}[H]
+    \renewcommand{\arraystretch}{1.5}
+    \setlength{\tabcolsep}{8pt}
+    \rowcolors{2}{gray!15}{white}
+    \centering
+    % Sử dụng tabularx và chỉ định chiều rộng mong muốn
+    \begin{tabularx}{0.9\textwidth}{|l|l|X|} %<-- THAY ĐỔI Ở ĐÂY
+        \hline
+        \rowcolor{gray!30}
+        \textbf{Lệnh} & \textbf{Tham số} & \textbf{Mô tả} \\
+        \hline
+        APP\_LIST & - & Liệt kê tất cả ứng dụng đang chạy \\
+        PROCESS\_LIST & - & Liệt kê tất cả process \\
+        APP\_START & path, params & Khởi chạy ứng dụng \\
+        APP\_STOP & processId, force & Dừng ứng dụng \\
+        \hline
+    \end{tabularx}
+    \caption{Các lệnh điều khiển chính}
+\end{table}
+\end{center}
+
+\subsubsection{Xử lý lỗi và logging}
+
+Hệ thống tích hợp cơ chế logging để theo dõi các thao tác:
+
+\begin{lstlisting}[language=C++, caption=Logging và xử lý lỗi]
+// src/core/app_control.cpp
+void LogApplicationAction(const std::string& action, 
+                         const std::string& appName,
+                         bool success, 
+                         const std::string& errorMsg = "") {
+    
+    std::ofstream logFile("client_log.txt", std::ios::app);
+    
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    
+    logFile << "[" << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S") << "] ";
+    logFile << action << " - " << appName;
+    logFile << (success ? " SUCCESS" : " FAILED");
+    
+    if (!errorMsg.empty()) {
+        logFile << " - Error: " << errorMsg;
+    }
+    
+    logFile << std::endl;
+    logFile.close();
+}
+\end{lstlisting}
+
+\subsection{Chụp toàn bộ màn hình}
+
+\subsection{Bắt phím nhấn (Keylogger)}
+
+\subsubsection*{Tính năng:}
+\addcontentsline{toc}{subsubsection}{Tính năng:}
+\pdfbookmark[3]{Tính năng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{KEYLOGGER: } ghi nhận các phím nhấn ở mức hệ thống và đệm vào bộ nhớ nhằm theo dõi hành vi của máy \textbf{Server}.
+\end{itemize}
+
+\subsubsection*{Công nghệ sử dụng:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Công nghệ sử dụng:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Công nghệ sử dụng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{Windows Hooks}: \texttt{SetWindowsHookEx(WH\_KEYBOARD\_LL)} để bắt sự kiện bàn phím toàn cục.
+  \item \textbf{Xử lý thông điệp}: vòng lặp \texttt{GetMessage}/\texttt{TranslateMessage}/\texttt{DispatchMessage}.
+  \item \textbf{Đa luồng/an toàn dữ liệu}: \texttt{std::atomic<bool>} cho trạng thái chạy; \texttt{std::mutex} bảo vệ bộ đệm; \texttt{std::ostringstream} tích luỹ bản ghi.
+\end{itemize}
+
+\subsubsection*{Cách hoạt động:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Cách hoạt động:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Cách hoạt động:}{sec:get-feature} 
+
+\begin{enumerate}
+    \item Khởi tạo trạng thái: running (atomic), bộ đệm (rawBuffer), khóa (bufferMutex) và biến nén.
+    \item Khi bắt đầu, đặt running = true, cài hook bàn phím ở mức thấp, vào vòng lặp GetMessage chờ sự kiện
+    \item Xử lý phím, lấy vkCode đổi sang chuỗi hiển thị bằng resolveVkCode, nếu trùng thì tăng biến đếm rồi ghi nhận phím mới
+    \item resolveVkCode bao gồm các phím đặc biệt (như thẻ [ENTER],...), chữ/số. 
+    \item Nén đầu ra, sau đó dừng keylogger bằng cách đặt running = false, gửi WM\_QUIT để thoát vòng lặp, gỡ hook
+    \item Cuối cùng truy xuất và trả chuỗi log
+\end{enumerate}
+
+\subsubsection*{Kết quả trả về:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Kết quả trả về:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Kết quả trả về:}{sec:get-feature} 
+\paragraph{Kết quả lệnh \texttt{KEYLOGGER}}
+
+\subsection{Xử lí và sử dụng webcam}
+
+\subsection{Lấy files}
+
+\subsubsection*{Tính năng:}
+\addcontentsline{toc}{subsubsection}{Tính năng:}
+\pdfbookmark[3]{Tính năng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{GET: } nhận \texttt{path} tệp trên máy \textbf{Server} (máy bị điều khiển) và tải file về \textbf{Client}.
+\end{itemize}
+
+\subsubsection*{Công nghệ sử dụng:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Công nghệ sử dụng:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Công nghệ sử dụng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{C++17 STL}: \texttt{<fstream>} (đọc nhị phân), \texttt{<string>}, \texttt{<sstream>} (tiền xử lý chuỗi), \texttt{<filesystem>} (kiểm tra tồn tại, kích thước, sao chép).
+  \item \textbf{An toàn bộ nhớ}: dự trù dung lượng \texttt{std::string::reserve} và \texttt{resize} trước khi \texttt{read()}.
+  \item \textbf{Chống lỗi phổ biến}: chuẩn hoá đường dẫn (\texttt{trim}), kiểm tra tồn tại/kích thước, bắt ngoại lệ \texttt{std::filesystem::filesystem\_error}.
+\end{itemize}
+
+\subsubsection*{Cách hoạt động:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Cách hoạt động:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Cách hoạt động:}{sec:get-feature} 
+
+\begin{enumerate}
+    \item Ta cần đọc file qua đường dẫn, xử lý đường dẫn (trim khoảng trắng, xử lý file rỗng, mở binary file, lấy kích thước, cấp chỗ, đọc content).
+    \item Để tải file xuống, ta kiểm tra file có tồn tại không.
+    \item Nếu có tồn tại, ta kiểm tra kích thước file, lấy teen file gốc (filename = "receive\_" + basename) rồi chọn thư mục đích.
+    \item Sử dụng hàm copy\_file(sourcePath, finalDest) được cung cấp sẵn để lấy file về.
+\end{enumerate}
+
+\subsubsection*{Kết quả trả về:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Kết quả trả về:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Kết quả trả về:}{sec:get-feature} 
+\paragraph{Kết quả lệnh \texttt{GET}}
+
+
+\subsection{Restart / Shutdown máy}
+
+\subsubsection*{Tính năng:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Tính năng:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Tính năng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{RESTART: } Cho phép máy \textbf{khởi động lại} thông qua lệnh điều khiển từ xa.
+  \item \textbf{SHUTDOWN: } Cho phép máy \textbf{tắt nguồn} thông qua lệnh điều khiển từ xa.
+\end{itemize}
+
+\subsubsection*{Công nghệ sử dụng:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Công nghệ sử dụng:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Công nghệ sử dụng:}{sec:get-feature} 
+\begin{itemize}
+  \item \textbf{C++17 STL}: hàm \texttt{system()} để gọi lệnh hệ thống.
+  \item \textbf{Windows command}: 
+    \begin{itemize}
+      \item \verb|shutdown /s /t 0| : tắt máy ngay (shutdown).
+      \item \verb|shutdown /r /t 0| : khởi động lại (restart).
+    \end{itemize}
+\end{itemize}
+
+\subsubsection*{Cách hoạt đông:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Cách hoạt đông:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Cách hoạt đông:}{sec:get-feature} 
+\begin{enumerate}
+    \item Ở lệnh SHUTDOWN, sử dụng lệnh "shutdown/s/t 0" đã được cung cấp (/s: tắt máy, /t 0: thời gian chờ thực thi là 0)
+    \item Ở lệnh RESTART, sử dụng lệnh "shutdown/r/t 0" đã được cung cấp (/r: tắt máy, /t 0: thời gian chờ thực thi là 0)
+    \item Gọi system(cmd), nếu lệnh hợp lệ, Windows sẽ bắt đầu quá trình thực thi
+\end{enumerate}
+
+\subsubsection*{Kết quả trả về:} % không đánh số
+\addcontentsline{toc}{subsubsection}{Kết quả trả về:} % (tuỳ chọn) thêm vào Mục lục
+\pdfbookmark[3]{Kết quả trả về:}{sec:get-feature} 
+\paragraph{Kết quả lệnh \texttt{SHUTDOWN}}
+\paragraph{Kết quả lệnh \texttt{RESTART}}

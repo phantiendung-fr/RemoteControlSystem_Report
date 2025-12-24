@@ -1,0 +1,558 @@
+\section{Cài đặt và khởi chạy}
+
+\subsection{Yêu cầu hệ thống}
+
+\subsubsection{Yêu cầu phần cứng}
+
+\begin{itemize}
+    \item \textbf{CPU}: Intel/AMD x64 hoặc x86 architecture
+    \item \textbf{RAM}: Tối thiểu 2GB, khuyến nghị 4GB+
+    \item \textbf{Ổ cứng}: 500MB dung lượng trống
+    \item \textbf{Webcam}: Hỗ trợ DirectShow (cho tính năng webcam streaming)
+    \item \textbf{Mạng}: Ethernet/WiFi connection
+    \item \textbf{Màn hình}: Độ phân giải tối thiểu 1024×768
+\end{itemize}
+
+\subsubsection{Yêu cầu phần mềm}
+\begin{itemize}
+    \item \textbf{Hệ điều hành}: Windows 10/11 (64-bit hoặc 32-bit)
+    \item \textbf{.NET Runtime}: .NET 10.0 Runtime hoặc SDK
+    \item \textbf{Visual Studio 2022} (cho development) hoặc dotnet CLI
+    \item \textbf{Trình duyệt web}: Chrome/Edge/Firefox phiên bản mới nhất
+    \item \textbf{Quyền administrator}: Cho một số tính năng như keylogger, registry
+\end{itemize}
+
+\subsection{Hướng dẫn cài đặt}
+
+\subsubsection{Cài đặt .NET 10.0 Runtime}
+\begin{enumerate}
+    \item \textbf{Tải .NET Runtime}: Truy cập \url{https://dotnet.microsoft.com/download/dotnet/10.0}
+    \item \textbf{Chọn phiên bản}: Tải .NET 10.0 Desktop Runtime cho Windows
+    \item \textbf{Cài đặt}: Chạy installer và làm theo hướng dẫn
+    \item \textbf{Xác nhận cài đặt}:
+    \begin{lstlisting}[language=bash]
+    dotnet --version
+    # Kết quả: 10.0.x
+    \end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Clone source code từ repository}
+\begin{enumerate}
+    \item \textbf{Clone repository}:
+    \begin{lstlisting}[language=bash]
+    git clone https://github.com/phantiendung-fr/RemoteControlSystem.git
+    cd RemoteControlSystem
+    \end{lstlisting}
+    
+    \item \textbf{Cấu trúc thư mục}:
+    \begin{itemize}
+        \item \texttt{RemoteControl.Server/}: Mã nguồn server
+        \item \texttt{RemoteControl.Client/}: Mã nguồn client
+        \item \texttt{README.md}: Hướng dẫn sử dụng
+        \item \texttt{LICENSE}: Giấy phép
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Build bằng Visual Studio 2022}
+\begin{enumerate}
+    \item \textbf{Mở solution}:
+    \begin{lstlisting}[language=bash]
+    # Mở file solution
+    RemoteControlSystem.sln
+    \end{lstlisting}
+    
+    \item \textbf{Restore packages}:
+    \begin{itemize}
+        \item Click chuột phải vào solution → "Restore NuGet Packages"
+        \item Hoặc sử dụng Package Manager Console:
+        \begin{lstlisting}[language=bash]
+        dotnet restore
+        \end{lstlisting}
+    \end{itemize}
+    
+    \item \textbf{Build solution}:
+    \begin{itemize}
+        \item Chọn Configuration: "Release"
+        \item Chọn Platform: "Any CPU" hoặc "x64"
+        \item Build → Build Solution (Ctrl+Shift+B)
+    \end{itemize}
+    
+    \item \textbf{Output files}:
+    \begin{itemize}
+        \item Server: \texttt{RemoteControl.Server/bin/Release/net10.0/}
+        \item Client: \texttt{RemoteControl.Client/bin/Release/net10.0-windows/}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Build bằng dotnet CLI}
+\begin{enumerate}
+    \item \textbf{Build server}:
+    \begin{lstlisting}[language=bash]
+    cd RemoteControl.Server
+    dotnet publish -c Release -o ./publish
+    \end{lstlisting}
+    
+    \item \textbf{Build client}:
+    \begin{lstlisting}[language=bash]
+    cd RemoteControl.Client
+    dotnet publish -c Release -r win10-x64 -o ./publish
+    \end{lstlisting}
+    
+    \item \textbf{Kiểm tra build}:
+    \begin{lstlisting}[language=bash]
+    # Server
+    dir RemoteControl.Server\publish\*.exe
+    
+    # Client
+    dir RemoteControl.Client\publish\*.exe
+    \end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Publish tự động với script}
+\begin{enumerate}
+    \item \textbf{Chạy build script}:
+    \begin{lstlisting}[language=batch]
+    # Windows
+    build.bat
+    
+    # Linux/macOS
+    chmod +x build.sh
+    ./build.sh
+    \end{lstlisting}
+    
+    \item \textbf{Script sẽ thực hiện}:
+    \begin{itemize}
+        \item Clean build directories
+        \item Restore NuGet packages
+        \item Build server và client
+        \item Copy dependencies
+        \item Tạo zip file cho distribution
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Hướng dẫn sử dụng}
+
+\subsubsection{Khởi động Server}
+\begin{enumerate}
+    \item \textbf{Cách 1: Chạy từ Visual Studio}:
+    \begin{itemize}
+        \item Set \texttt{RemoteControl.Server} làm startup project
+        \item Nhấn F5 hoặc Debug → Start Debugging
+        \item Server sẽ tự động mở trình duyệt tại \url{http://localhost:5000}
+    \end{itemize}
+    
+    \item \textbf{Cách 2: Chạy từ executable}:
+    \begin{lstlisting}[language=bash]
+    cd RemoteControl.Server\publish
+    .\RemoteControl.Server.exe
+    \end{lstlisting}
+    
+    \item \textbf{Cách 3: Chạy với dotnet CLI}:
+    \begin{lstlisting}[language=bash]
+    cd RemoteControl.Server
+    dotnet run
+    \end{lstlisting}
+    
+    \item \textbf{Console output}:
+    \begin{verbatim}
+    ==================================================
+        REMOTE CONTROL SERVER
+    ==================================================
+    Server URL: http://localhost:5000
+    SignalR Hub: http://localhost:5000/controlHub
+    Dashboard: http://localhost:5000
+    Health Check: http://localhost:5000/health
+    ==================================================
+    Press Ctrl+C to stop the server
+    ==================================================
+    \end{verbatim}
+\end{enumerate}
+
+\subsubsection{Khởi động Client (Agent)}
+\begin{enumerate}
+    \item \textbf{Cài đặt agent trên máy mục tiêu}:
+    \begin{itemize}
+        \item Copy thư mục \texttt{RemoteControl.Client/publish} đến máy mục tiêu
+        \item Chạy file \texttt{RemoteControl.Client.exe}
+        \item Agent sẽ tự động kết nối đến server
+    \end{itemize}
+    
+    \item \textbf{Chạy agent từ command line}:
+    \begin{lstlisting}[language=bash]
+    .\RemoteControl.Client.exe --server http://your-server:5000
+    \end{lstlisting}
+    
+    \item \textbf{Console output khi kết nối thành công}:
+    \begin{verbatim}
+    Đang kết nối tới: http://your-server:5000/controlHub...
+    --> Đã kết nối thành công!
+    Máy DESKTOP-ABC123 (Admin) đã online.
+    \end{verbatim}
+    
+    \item \textbf{Chạy agent như Windows Service} (tùy chọn):
+    \begin{lstlisting}[language=bash]
+    # Cài đặt service
+    sc create RemoteControlAgent binPath= "C:\Path\To\RemoteControl.Client.exe"
+    
+    # Khởi động service
+    sc start RemoteControlAgent
+    
+    # Dừng service
+    sc stop RemoteControlAgent
+    \end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Sử dụng Web Dashboard}
+\begin{enumerate}
+    \item \textbf{Truy cập dashboard}:
+    \begin{itemize}
+        \item Mở trình duyệt web
+        \item Truy cập \url{http://localhost:5000} (hoặc server IP)
+        \item Dashboard sẽ tự động kết nối đến SignalR Hub
+    \end{itemize}
+    
+    \item \textbf{Interface components}:
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{dashboard_interface.png}
+    \caption{Giao diện Web Dashboard với các thành phần chính}
+    \label{fig:dashboard_interface}
+    \end{figure}
+    
+    \begin{itemize}
+        \item \textbf{Connection Status}: Hiển thị trạng thái kết nối agent
+        \item \textbf{Remote Screen}: Panel hiển thị màn hình từ xa
+        \item \textbf{Webcam Stream}: Panel hiển thị webcam từ xa
+        \item \textbf{Process Manager}: Quản lý tiến trình
+        \item \textbf{System Controls}: Điều khiển hệ thống
+        \item \textbf{Keylogger}: Console hiển thị keystrokes
+        \item \textbf{System Logs}: Panel hiển thị logs hệ thống
+        \item \textbf{Statistics}: Thống kê hoạt động
+    \end{itemize}
+\end{enumerate}
+
+\begin{table}[h]
+    \renewcommand{\arraystretch}{1.5}
+    \setlength{\tabcolsep}{8pt}
+    \rowcolors{2}{gray!15}{white}
+    \centering
+    \begin{tabularx}{0.95\textwidth}{|l|X|}
+        \hline
+        \rowcolor{gray!30}
+        \textbf{Nhóm Lệnh} & \textbf{Chức Năng và Cú Pháp} \\
+        \hline
+        \textbf{Process Management} & 
+        \texttt{GetProcesses}: Liệt kê tất cả tiến trình đang chạy \newline
+        \texttt{KillProcess <pid>}: Dừng tiến trình theo PID \\
+        \hline
+        \textbf{Application Control} & 
+        \texttt{StartApplication <path>}: Khởi chạy ứng dụng từ đường dẫn \newline
+        \texttt{Shutdown}: Tắt máy tính từ xa \newline
+        \texttt{Restart}: Khởi động lại máy tính từ xa \\
+        \hline
+        \textbf{Screen Capture} & 
+        \texttt{RequestScreenshot}: Chụp màn hình máy tính từ xa \newline
+        \texttt{Download}: Tải ảnh screenshot về máy \\
+        \hline
+        \textbf{Webcam Control} & 
+        \texttt{StartWebcam}: Bắt đầu stream từ webcam \newline
+        \texttt{StopWebcam}: Dừng stream từ webcam \newline
+        \texttt{StartRecording}: Bắt đầu ghi video \newline
+        \texttt{StopRecording}: Dừng ghi video \\
+        \hline
+        \textbf{Keylogger} & 
+        \texttt{StartKeylogger}: Bắt đầu ghi lại keystrokes \newline
+        \texttt{StopKeylogger}: Dừng ghi keystrokes \newline
+        \texttt{Download Keylog}: Tải file keylog về máy \\
+        \hline
+        \textbf{Registry Control} & 
+        \texttt{SetRegistry <root> <path> <key> <value>}: Thay đổi registry value \\
+        \hline
+        \textbf{System Information} & 
+        \texttt{GetSystemInfo}: Lấy thông tin hệ thống \newline
+        \texttt{Ping}: Kiểm tra kết nối agent \\
+        \hline
+        \textbf{Agent Control} & 
+        \texttt{ExitAgent}: Thoát agent từ xa \\
+        \hline
+    \end{tabularx}
+    \caption{Các lệnh điều khiển chính của hệ thống Remote Control}
+    \label{tab:remote_control_commands}
+\end{table}
+
+\subsubsection{Các tình huống sử dụng phổ biến}
+
+\paragraph{Giám sát màn hình từ xa}
+\begin{enumerate}
+    \item Truy cập dashboard tại \url{http://server:5000}
+    \item Click nút "Capture Screen" để chụp màn hình
+    \item Ảnh sẽ hiển thị trong panel "Remote Screen"
+    \item Click "Download" để tải ảnh về máy
+\end{enumerate}
+
+\paragraph{Stream webcam từ xa}
+\begin{enumerate}
+    \item Đảm bảo agent đã được cài đặt trên máy có webcam
+    \item Từ dashboard, click "Start Webcam"
+    \item Video stream sẽ hiển thị trong panel "Webcam Stream"
+    \item Click "Start Recording" để bắt đầu ghi video
+    \item Click "Stop Recording" và "Save Video" để lưu video
+\end{enumerate}
+
+\paragraph{Quản lý tiến trình từ xa}
+\begin{enumerate}
+    \item Từ dashboard, click "Refresh" trong panel "Process Manager"
+    \item Danh sách tiến trình sẽ hiển thị trong bảng
+    \item Để dừng tiến trình, click nút "Kill" tương ứng
+    \item Xác nhận hành động trong hộp thoại
+\end{enumerate}
+
+\paragraph{Ghi lại keystrokes}
+\begin{enumerate}
+    \item Click "Start" trong panel "Key Logger"
+    \item Keystrokes sẽ hiển thị real-time trong console
+    \item Click "Stop" để dừng ghi
+    \item Click "Save" để tải file keylog về máy
+\end{enumerate}
+
+\subsection{Cấu hình nâng cao}
+
+\subsubsection{Cấu hình Server}
+\begin{enumerate}
+    \item \textbf{Chỉnh sửa appsettings.json}:
+    \begin{lstlisting}[language=json]
+    {
+      "SignalR": {
+        "MaxReceiveMessageSize": 52428800, // 50MB
+        "ClientTimeoutInterval": 30, // giây
+        "KeepAliveInterval": 15, // giây
+        "HandshakeTimeout": 15 // giây
+      },
+      "Server": {
+        "Port": 5000,
+        "MaxConnections": 100,
+        "EnableCompression": true
+      }
+    }
+    \end{lstlisting}
+    
+    \item \textbf{Thay đổi port}:
+    \begin{itemize}
+        \item Mở file \texttt{Program.cs}
+        \item Tìm dòng: \texttt{app.Urls.Add("http://localhost:5000");}
+        \item Thay đổi port theo nhu cầu
+        \item Lưu ý: Cần mở port trên firewall
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Cấu hình Client}
+\begin{enumerate}
+    \item \textbf{Thay đổi server URL}:
+    \begin{itemize}
+        \item Mở file \texttt{Program.cs} trong project Client
+        \item Tìm dòng: \texttt{private static string HUB\_URL = "http://localhost:5000/controlHub";}
+        \item Thay đổi URL cho phù hợp
+        \item Rebuild client
+    \end{itemize}
+    
+    \item \textbf{Cấu hình webcam}:
+    \begin{itemize}
+        \item Trong file \texttt{WebcamService.cs}:
+        \begin{lstlisting}[language=C#]
+        // Thay đổi FPS limit
+        if ((DateTime.Now - _lastFrameTime).TotalMilliseconds < 200) // 5fps
+        
+        // Thay đổi resolution
+        int newWidth = (int)(original.Width * ratio);
+        int newHeight = (int)(original.Height * ratio);
+        
+        // Thay đổi chất lượng ảnh
+        image.Save(ms, encoder, encoderParams); // quality: 40L
+        \end{lstlisting}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Triển khai production}
+\begin{enumerate}
+    \item \textbf{Reverse Proxy với Nginx}:
+    \begin{lstlisting}[language=bash]
+    server {
+        listen 80;
+        server_name your-domain.com;
+        
+        location / {
+            proxy_pass http://localhost:5000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+        }
+    }
+    \end{lstlisting}
+    
+    \item \textbf{SSL/HTTPS configuration}:
+    \begin{itemize}
+        \item Sử dụng Let's Encrypt cho SSL certificate
+        \item Cấu hình trong \texttt{Program.cs}:
+        \begin{lstlisting}[language=C#]
+        app.Urls.Add("https://0.0.0.0:5001");
+        \end{lstlisting}
+    \end{itemize}
+    
+    \item \textbf{Windows Firewall configuration}:
+    \begin{lstlisting}[language=bash]
+    # Mở port 5000
+    netsh advfirewall firewall add rule ^
+    name="RemoteControl Server" ^
+    dir=in action=allow protocol=TCP localport=5000
+    
+    # Mở port cho SignalR WebSocket
+    netsh advfirewall firewall add rule ^
+    name="SignalR WebSocket" ^
+    dir=in action=allow protocol=TCP localport=5001
+    \end{lstlisting}
+\end{enumerate}
+
+\subsection{Xử lý sự cố thường gặp}
+
+\subsubsection{Client không kết nối được đến Server}
+\begin{itemize}
+    \item \textbf{Kiểm tra kết nối mạng}:
+    \begin{lstlisting}[language=bash]
+    ping server-ip
+    telnet server-ip 5000
+    \end{lstlisting}
+    
+    \item \textbf{Kiểm tra firewall}:
+    \begin{itemize}
+        \item Đảm bảo port 5000 được mở trên server
+        \item Tạm thời tắt firewall để test
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra server status}:
+    \begin{lstlisting}[language=bash]
+    curl http://server-ip:5000/health
+    # Kết quả: {"status":"healthy","timestamp":"..."}
+    \end{lstlisting}
+\end{itemize}
+
+\subsubsection{Webcam không hoạt động}
+\begin{itemize}
+    \item \textbf{Kiểm tra webcam}:
+    \begin{itemize}
+        \item Đảm bảo webcam được kết nối và enabled
+        \item Kiểm tra trong Device Manager
+        \item Test với ứng dụng khác (Camera app)
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra permissions}:
+    \begin{itemize}
+        \item Đảm bảo ứng dụng có quyền truy cập webcam
+        \item Trong Windows Settings: Privacy → Camera
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra drivers}:
+    \begin{itemize}
+        \item Update webcam drivers
+        \item Cài đặt lại drivers nếu cần
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Keylogger không ghi được keystrokes}
+\begin{itemize}
+    \item \textbf{Kiểm tra permissions}:
+    \begin{itemize}
+        \item Chạy agent với quyền Administrator
+        \item Đảm bảo không có ứng dụng antivirus chặn hook
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra Windows Hook}:
+    \begin{itemize}
+        \item Keylogger sử dụng low-level keyboard hook
+        \item Một số ứng dụng có thể chặn hook
+        \item Thử tạm thời tắt antivirus
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra thread state}:
+    \begin{itemize}
+        \item Đảm bảo hook thread đang chạy
+        \item Kiểm tra console output của agent
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Dashboard không hiển thị dữ liệu real-time}
+\begin{itemize}
+    \item \textbf{Kiểm tra SignalR connection}:
+    \begin{itemize}
+        \item Mở Developer Tools (F12)
+        \item Chọn tab Network → WebSocket
+        \item Kiểm tra kết nối WebSocket
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra CORS configuration}:
+    \begin{itemize}
+        \item Đảm bảo CORS được cấu hình đúng
+        \item Kiểm tra console log trong browser
+    \end{itemize}
+    
+    \item \textbf{Kiểm tra browser compatibility}:
+    \begin{itemize}
+        \item Đảm bảo sử dụng browser hỗ trợ WebSocket
+        \item Thử với Chrome/Edge/Firefox mới nhất
+    \end{itemize}
+\end{itemize}
+
+\subsection{Bảo mật và an toàn}
+
+\subsubsection{Các biện pháp bảo mật cơ bản}
+\begin{itemize}
+    \item \textbf{Thay đổi port mặc định}: Không sử dụng port 5000 mặc định
+    \item \textbf{Sử dụng HTTPS}: Luôn sử dụng SSL/TLS trong production
+    \item \textbf{Firewall configuration}: Chỉ mở port cần thiết
+    \item \textbf{Authentication}: Thêm authentication cho dashboard (chưa có sẵn)
+    \item \textbf{Logging}: Theo dõi logs để phát hiện hoạt động bất thường
+\end{itemize}
+
+\subsubsection{Hardening cho production}
+\begin{enumerate}
+    \item \textbf{Thêm authentication}:
+    \begin{lstlisting}[language=C#]
+    // Trong Program.cs
+    builder.Services.AddAuthentication();
+    builder.Services.AddAuthorization();
+    \end{lstlisting}
+    
+    \item \textbf{Rate limiting}:
+    \begin{lstlisting}[language=C#]
+    // Giới hạn request rate
+    builder.Services.AddRateLimiter(options => {
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+            httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.User.Identity?.Name ?? 
+                httpContext.Request.Headers.Host.ToString(),
+                factory: partition => new FixedWindowRateLimiterOptions {
+                    AutoReplenishment = true,
+                    PermitLimit = 100,
+                    QueueLimit = 0,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+    });
+    \end{lstlisting}
+    
+    \item \textbf{Audit logging}:
+    \begin{itemize}
+        \item Log tất cả commands được thực thi
+        \item Log IP address của người dùng
+        \item Log thời gian và kết quả của mỗi command
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Legal considerations}
+\begin{itemize}
+    \item \textbf{Consent}: Luôn có sự đồng ý của người dùng trước khi cài đặt agent
+    \item \textbf{Transparency}: Thông báo cho người dùng về việc giám sát
+    \item \textbf{Data retention}: Xóa dữ liệu thu thập được khi không cần thiết
+    \item \textbf{Compliance}: Tuân thủ các luật về quyền riêng tư (GDPR, CCPA, etc.)
+\end{itemize}
+
+Hệ thống Remote Control được thiết kế để dễ dàng cài đặt và sử dụng, với khả năng mở rộng cho các môi trường production. Luôn đảm bảo tuân thủ các best practices về bảo mật và pháp lý khi triển khai trong môi trường thực tế.

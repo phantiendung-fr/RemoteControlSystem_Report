@@ -1,0 +1,381 @@
+\section{Tổng quan hệ thống}
+
+\subsection{Giới thiệu và mục tiêu dự án}
+
+\subsubsection{Mục tiêu chính của hệ thống}
+
+Hệ thống Remote Control được thiết kế như một giải pháp toàn diện cho việc điều khiển và giám sát máy tính từ xa thông qua giao diện web hiện đại. Hệ thống sử dụng kiến trúc client-server với công nghệ ASP.NET Core và SignalR, cung cấp khả năng giao tiếp thời gian thực giữa server điều khiển và các agent triển khai trên máy tính mục tiêu.
+
+Mục tiêu chính của hệ thống là cung cấp một nền tảng quản lý tập trung cho phép người quản trị thực hiện các thao tác điều khiển từ xa, giám sát hoạt động hệ thống, và thu thập dữ liệu một cách an toàn và hiệu quả. Hệ thống được thiết kế với kiến trúc module hóa cao, cho phép dễ dàng mở rộng và tích hợp thêm tính năng mới.
+
+\subsubsection{Bảng So Sánh Chức Năng Hệ Thống}
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\rowcolor{gray!30}
+\textbf{Nhóm Chức Năng} & \textbf{Tính Năng Cụ Thể} & \textbf{Trạng Thái Triển Khai} \\
+\hline
+Quản lý tiến trình &
+Liệt kê tiến trình \newline
+Dừng tiến trình theo PID \newline
+Hiển thị thông tin chi tiết &
+\textbf{100\% Hoàn Thành} \newline
+- Real-time process listing \newline
+- Kill process với xác nhận \newline
+- Multi-process support \\
+\hline
+Điều khiển ứng dụng &
+Khởi chạy ứng dụng từ xa \newline
+Quản lý ứng dụng đang chạy &
+\textbf{100\% Hoàn Thành} \newline
+- Shell execution \newline
+- Path validation \newline
+- Error handling \\
+\hline
+Chụp màn hình &
+Chụp toàn màn hình \newline
+Nén ảnh tự động \newline
+Tải ảnh về máy &
+\textbf{100\% Hoàn Thành} \newline
+- GDI capture \newline
+- JPEG compression \newline
+- Base64 streaming \newline
+- Download capability \\
+\hline
+Keylogger &
+Ghi lại phím bấm thời gian thực \newline
+Xử lý phím đặc biệt \newline
+Lưu trữ và xuất dữ liệu &
+\textbf{100\% Hoàn Thành} \newline
+- Windows keyboard hook \newline
+- Modifier key detection \newline
+- Real-time console display \newline
+- Export to text file \\
+\hline
+Webcam Streaming &
+Stream video thời gian thực \newline
+Ghi lại video \newline
+Điều chỉnh chất lượng &
+\textbf{100\% Hoàn Thành} \newline
+- DirectShow capture \newline
+- Frame rate control (5fps) \newline
+- Resolution scaling \newline
+- Recording functionality \\
+\hline
+Điều khiển hệ thống &
+Shutdown từ xa \newline
+Restart từ xa \newline
+Thoát agent &
+\textbf{100\% Hoàn Thành} \newline
+- System command execution \newline
+- Safety confirmation \newline
+- Graceful termination \\
+\hline
+Quản lý Registry &
+Thay đổi registry values \newline
+Hỗ trợ các root keys &
+\textbf{100\% Hoàn Thành} \newline
+- Multi-root support \newline
+- Automatic type detection \newline
+- Error handling \\
+\hline
+Thông tin hệ thống &
+Thu thập system info \newline
+Hiển thị dashboard &
+\textbf{100\% Hoàn Thành} \newline
+- Multi-parameter collection \newline
+- Real-time display \newline
+- JSON serialization \\
+\hline
+Web Dashboard &
+Giao diện điều khiển web \newline
+Real-time updates \newline
+Responsive design &
+\textbf{100\% Hoàn Thành} \newline
+- Bootstrap 5 interface \newline
+- SignalR communication \newline
+- Mobile responsive \\
+\hline
+\end{tabularx}
+\caption{Bảng tổng hợp các chức năng của hệ thống Remote Control}
+\label{tab:system_functionality}
+\end{table}
+
+Hệ thống đã triển khai thành công tất cả các tính năng cốt lõi với độ ổn định cao. Kiến trúc module cho phép từng thành phần hoạt động độc lập, đồng thời tích hợp chặt chẽ thông qua SignalR Hub để đảm bảo trải nghiệm người dùng mượt mà.
+
+\subsection{Kiến trúc hệ thống}
+
+\subsubsection{Kiến trúc tổng thể}
+
+Hệ thống được xây dựng theo mô hình client-server với kiến trúc ba tầng rõ ràng: tầng trình bày (Presentation Layer), tầng nghiệp vụ (Business Layer), và tầng dữ liệu (Data Layer). Mỗi tầng có nhiệm vụ riêng biệt và giao tiếp thông qua các giao thức chuẩn hóa.
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=\textwidth]{system_architecture.png}
+% \caption{Kiến trúc tổng thể hệ thống Remote Control}
+\label{fig:system_overview_architecture}
+\end{figure}
+
+Tầng trình bày bao gồm Web Dashboard được xây dựng bằng HTML5, Bootstrap 5 và JavaScript, cung cấp giao diện người dùng trực quan và dễ sử dụng. Dashboard tương tác với server thông qua SignalR để nhận và hiển thị dữ liệu thời gian thực.
+
+Tầng nghiệp vụ được triển khai trên ASP.NET Core Server, xử lý tất cả logic nghiệp vụ, quản lý kết nối client, định tuyến lệnh và xử lý dữ liệu. SignalR Hub đóng vai trò trung tâm trong việc quản lý kết nối và truyền tải thông điệp.
+
+Tầng dữ liệu bao gồm các agent client chạy trên máy tính mục tiêu, thực thi các lệnh từ server và thu thập dữ liệu hệ thống. Mỗi agent là một ứng dụng Windows độc lập, được thiết kế để hoạt động ổn định với khả năng tự kết nối lại khi mất kết nối.
+
+\subsubsection{Công nghệ và môi trường phát triển}
+
+Hệ thống được phát triển bằng ngôn ngữ C\# với .NET 10.0, tận dụng các tính năng hiện đại của nền tảng .NET để xây dựng ứng dụng cross-platform. Server sử dụng ASP.NET Core để xây dựng web API và SignalR Hub, trong khi client sử dụng Windows Forms cho các thao tác hệ thống cấp thấp.
+
+Các thư viện và framework chính bao gồm:
+\begin{itemize}
+    \item \textbf{ASP.NET Core 10.0}: Web server và SignalR framework
+    \item \textbf{SignalR 6.0}: Real-time communication
+    \item \textbf{AForge.Video 2.2.5}: Webcam capture và xử lý video
+    \item \textbf{Bootstrap 5.3.0}: Frontend framework cho dashboard
+    \item \textbf{System.Drawing.Common}: Xử lý ảnh và đồ họa
+\end{itemize}
+
+Môi trường phát triển chính là Visual Studio 2022 với .NET 10.0 SDK. Hệ thống hỗ trợ triển khai trên cả Windows Server và các nền tảng .NET Core khác. Build process sử dụng MSBuild với cấu hình cho cả Debug và Release modes.
+
+\subsubsection{Các module chính của hệ thống}
+
+\paragraph{SignalR Communication Hub}
+
+ControlHub là trái tim của hệ thống, quản lý tất cả kết nối giữa server và clients. Hub sử dụng ConcurrentDictionary để lưu trữ thông tin các agent đang kết nối, cung cấp các phương thức hai chiều cho việc gửi lệnh và nhận dữ liệu.
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=0.8\textwidth]{signalr_hub_architecture.png}
+% \caption{Kiến trúc SignalR Hub và luồng dữ liệu}
+\label{fig:signalr_hub}
+\end{figure}
+
+Hub triển khai hai nhóm phương thức chính:
+\begin{itemize}
+    \item \textbf{Server-to-Client}: Các lệnh điều khiển gửi từ dashboard đến agent
+    \item \textbf{Client-to-Server}: Dữ liệu phản hồi từ agent gửi về dashboard
+\end{itemize}
+
+Mỗi kết nối được gán một ConnectionID duy nhất và lưu trữ thông tin agent bao gồm machine name, user name, thời gian kết nối. Hub hỗ trợ broadcast đến tất cả clients hoặc gửi đến client cụ thể dựa trên ConnectionID.
+
+\paragraph{Webcam Service Module}
+
+WebcamService sử dụng AForge.Video.DirectShow để truy cập và điều khiển webcam. Module được thiết kế với các tính năng tối ưu hóa hiệu suất:
+
+\begin{itemize}
+    \item \textbf{Auto-resolution selection}: Tự động chọn độ phân giải thấp nhất (<320x240) để giảm bandwidth
+    \item \textbf{Frame rate control}: Giới hạn 5fps để giảm tải CPU và network
+    \item \textbf{Image compression}: Nén ảnh JPEG với chất lượng 40\% 
+    \item \textbf{Memory management}: Sử dụng using statement và proper disposal để tránh memory leak
+\end{itemize}
+
+Service implement IDisposable pattern để đảm bảo giải phóng tài nguyên camera đúng cách. Cơ chế timeout được áp dụng khi dừng stream để tránh treo ứng dụng.
+
+\paragraph{Keylogger Service Module}
+
+KeyLoggerService sử dụng Windows Hook API (WH\_KEYBOARD\_LL) để bắt sự kiện bàn phím ở mức độ hệ thống. Module chạy trong thread riêng với ApartmentState.STA để đảm bảo hoạt động ổn định của Windows message loop.
+
+Các tính năng chính của keylogger:
+\begin{itemize}
+    \item \textbf{Modifier key detection}: Phát hiện Shift, Ctrl, Alt, Caps Lock
+    \textbf{Special key handling}: Xử lý các phím đặc biệt (Enter, Tab, Arrow keys)
+    \item \textbf{Character conversion}: Chuyển đổi key code thành ký tự hiển thị được
+    \item \textbf{Thread safety}: Sử dụng lock và volatile flags để đảm bảo thread safety
+\end{itemize}
+
+Service được thiết kế để hoạt động ổn định ngay cả khi có exception, với cơ chế cleanup đảm bảo unhook keyboard khi dừng service.
+
+\paragraph{Registry Management Module}
+
+RegistryHelper cung cấp interface đơn giản để thao tác với Windows Registry từ xa. Module hỗ trợ tất cả các root keys chính (HKCU, HKLM, HKCR, HKU, HKCC) và tự động detect kiểu dữ liệu của giá trị.
+
+Tính năng tự động type detection:
+\begin{itemize}
+    \item \textbf{Integer}: Tự động parse string thành integer
+    \item \textbf{Boolean}: Chuyển đổi "true"/"false" thành 1/0
+    \item \textbf{Hexadecimal}: Hỗ trợ giá trị hex (0x prefix)
+    \item \textbf{String}: Giữ nguyên giá trị string
+\end{itemize}
+
+Module xử lý exception toàn diện và trả về message lỗi chi tiết để debug. Tất cả registry keys được mở với using statement để đảm bảo đóng đúng cách.
+
+\paragraph{Web Dashboard Interface}
+
+Dashboard được xây dựng như một Single Page Application (SPA) với các thành phần chính:
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=0.9\textwidth]{dashboard_layout.png}
+% \caption{Bố cục và các thành phần của Web Dashboard}
+\label{fig:dashboard_layout}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Real-time Screen Viewer}: Hiển thị màn hình remote với khả năng capture và download
+    \item \textbf{Webcam Stream Panel}: Hiển thị video stream từ webcam với controls ghi hình
+    \item \textbf{Process Manager Table}: Hiển thị danh sách process với action kill
+    \item \textbf{System Control Panel}: Các nút điều khiển hệ thống (shutdown, restart, launch app)
+    \item \textbf{Keylogger Console}: Hiển thị keystrokes thời gian thực
+    \item \textbf{System Log Panel}: Hiển thị log hệ thống với màu sắc phân loại
+    \item \textbf{Statistics Cards}: Thống kê hoạt động hệ thống
+\end{itemize}
+
+Dashboard sử dụng JavaScript SignalR client để kết nối và nhận dữ liệu thời gian thực. Giao diện được thiết kế responsive với Bootstrap 5, hoạt động tốt trên cả desktop và mobile.
+
+\subsubsection{Luồng dữ liệu và giao thức}
+
+Hệ thống sử dụng SignalR làm giao thức giao tiếp chính, hỗ trợ cả WebSocket và long-polling fallback. Các loại dữ liệu được truyền tải bao gồm:
+
+\paragraph{Command Data Flow}
+\begin{enumerate}
+    \item User thực hiện action trên dashboard
+    \item JavaScript gọi sendCommand() với command name và data
+    \item SignalR client gửi message đến server
+    \item ControlHub nhận message và gửi đến tất cả agents
+    \item Agent nhận command và thực thi thông qua Program.cs
+    \item Kết quả được gửi ngược lại qua Hub đến dashboard
+\end{enumerate}
+
+\paragraph{Image/Video Data Flow}
+\begin{enumerate}
+    \item Agent capture ảnh/video từ hệ thống
+    \item Dữ liệu được convert sang base64 string
+    \item Base64 string được gửi qua SignalR Hub
+    \item Dashboard nhận base64 và hiển thị bằng thẻ <img> hoặc <video>
+    \item Dữ liệu có thể được lưu cục bộ thông qua download
+\end{enumerate}
+
+\paragraph{Real-time Data Flow}
+\begin{itemize}
+    \item \textbf{Keystrokes}: Mỗi phím bấm được gửi ngay lập tức khi được ghi nhận
+    \item \textbf{Webcam frames}: Frame mới nhất được gửi mỗi 200ms (5fps)
+    \item \textbf{System logs}: Log messages được gửi ngay khi phát sinh
+    \item \textbf{Connection status}: Status updates được push khi có thay đổi
+\end{itemize}
+
+\subsubsection{Quản lý kết nối và xử lý lỗi}
+
+Hệ thống triển khai cơ chế quản lý kết nối mạnh mẽ với các tính năng:
+
+\paragraph{Auto-reconnection Mechanism}
+\begin{itemize}
+    \item \textbf{Client-side reconnection}: SignalR client tự động reconnect với exponential backoff
+    \item \textbf{Server-side cleanup}: Hub tự động xóa disconnected clients khỏi danh sách
+    \item \textbf{Connection state tracking}: Theo dõi trạng thái kết nối với visual indicators
+    \item \textbf{Heartbeat monitoring}: Ping/pong mechanism để phát hiện mất kết nối
+\end{itemize}
+
+\paragraph{Error Handling Strategy}
+\begin{itemize}
+    \item \textbf{Try-catch comprehensive}: Tất cả operations được wrap trong try-catch
+    \item \textbf{Graceful degradation}: Hệ thống tiếp tục hoạt động khi một component fail
+    \item \textbf{User-friendly error messages}: Hiển thị lỗi dễ hiểu trên dashboard
+    \item \textbf{Logging hệ thống}: Ghi log chi tiết cho mọi exception
+\end{itemize}
+
+\paragraph{Resource Management}
+\begin{itemize}
+    \item \textbf{IDisposable pattern}: Tất cả resource-intensive objects implement IDisposable
+    \item \textbf{Using statements}: Đảm bảo resource được giải phóng đúng cách
+    \item \textbf{Memory optimization}: Giới hạn frame rate và image quality
+    \item \textbf{Connection pooling}: SignalR quản lý connection pool tự động
+\end{itemize}
+
+\subsubsection{Bảo mật hệ thống}
+
+Hệ thống hiện tại được thiết kế cho môi trường trusted network với các tính năng bảo mật cơ bản:
+
+\paragraph{Current Security Implementation}
+\begin{itemize}
+    \item \textbf{Input validation}: Validate tất cả user inputs trên dashboard
+    \item \textbf{Path sanitization}: Kiểm tra và sanitize file paths trước khi thực thi
+    \item \textbf{Process authorization}: Kiểm tra quyền trước khi kill process
+    \item \textbf{Error message sanitization}: Không expose thông tin nhạy cảm trong error messages
+\end{itemize}
+
+\paragraph{Security Recommendations for Production}
+\begin{itemize}
+    \item \textbf{HTTPS enforcement}: Sử dụng SSL/TLS cho tất cả communications
+    \item \textbf{Authentication system}: Triển khai JWT hoặc Windows Authentication
+    \item \textbf{Authorization framework}: Phân quyền user based trên roles
+    \item \textbf{Rate limiting}: Giới hạn request rate để ngăn DoS attacks
+    \item \textbf{Audit logging}: Ghi log tất cả actions cho mục đích auditing
+    \item \textbf{IP whitelisting}: Chỉ cho phép kết nối từ IP addresses được authorized
+\end{itemize}
+
+\paragraph{Data Privacy Considerations}
+\begin{itemize}
+    \item \textbf{Data encryption}: Mã hóa sensitive data trong transit và at rest
+    \item \textbf{Data retention policy}: Xóa dữ liệu cũ tự động theo policy
+    \item \textbf{User consent}: Yêu cầu consent trước khi thu thập dữ liệu
+    \item \textbf{Compliance}: Tuân thủ các regulations như GDPR, CCPA nếu applicable
+\end{itemize}
+
+\subsubsection{Kiến trúc mở rộng và scalability}
+
+Hệ thống được thiết kế với khả năng mở rộng cho các deployment quy mô lớn:
+
+\paragraph{Horizontal Scaling Strategies}
+\begin{itemize}
+    \item \textbf{Multiple server instances}: Triển khai nhiều server instances behind load balancer
+    \item \textbf{SignalR backplane}: Sử dụng Redis hoặc Azure SignalR Service cho distributed messaging
+    \item \textbf{Database persistence}: Lưu trữ connection state và historical data trong database
+    \item \textbf{Microservices architecture}: Tách các components thành microservices độc lập
+\end{itemize}
+
+\paragraph{Performance Optimization}
+\begin{itemize}
+    \item \textbf{Image compression algorithms}: Tối ưu compression ratio và quality
+    \item \textbf{Binary protocols}: Chuyển từ base64 sang binary protocol cho image/video data
+    \item \textbf{CDN integration}: Sử dụng CDN cho static assets của dashboard
+    \item \textbf{Caching mechanisms}: Cache frequently accessed data để giảm load server
+\end{itemize}
+
+\paragraph{Monitoring và Maintenance}
+\begin{itemize}
+    \item \textbf{Health checks}: REST endpoint để kiểm tra tình trạng hệ thống
+    \item \textbf{Metrics collection}: Thu thập performance metrics (CPU, memory, network)
+    \item \textbf{Alerting system}: Gửi alerts khi phát hiện issues
+    \item \textbf{Automated deployment}: CI/CD pipeline cho automated testing và deployment
+\end{itemize}
+
+\subsubsection{Triển khai thực tế và use cases}
+
+Hệ thống có thể được triển khai trong nhiều môi trường khác nhau với các use cases cụ thể:
+
+\paragraph{Enterprise IT Management}
+\begin{itemize}
+    \item \textbf{Remote support}: Hỗ trợ kỹ thuật từ xa cho nhân viên
+    \item \textbf{Software deployment}: Cài đặt và cập nhật ứng dụng từ xa
+    \item \textbf{System monitoring}: Giám sát tình trạng hệ thống mạng nội bộ
+    \item \textbf{Compliance auditing}: Kiểm tra cấu hình hệ thống cho compliance
+\end{itemize}
+
+\paragraph{Educational Environments}
+\begin{itemize}
+    \item \textbf{Classroom management}: Quản lý phòng máy tính trong trường học
+    \item \textbf{Student monitoring}: Giám sát hoạt động của học sinh trong giờ học
+    \item \textbf{Remote instruction}: Hướng dẫn thực hành từ xa
+    \item \textbf{Lab management}: Quản lý phòng lab máy tính
+\end{itemize}
+
+\paragraph{Other Use Cases}
+\begin{itemize}
+    \item \textbf{Digital forensics}: Thu thập evidence với proper legal authorization
+    \item \textbf{Penetration testing}: Security testing trong môi trường được kiểm soát
+    \item \textbf{Parental control}: Giám sát máy tính gia đình (với consent)
+    \item \textbf{Remote administration}: Quản trị hệ thống từ xa cho các chi nhánh
+\end{itemize}
+
+\paragraph{Deployment Scenarios}
+\begin{itemize}
+    \item \textbf{Local network}: Server chạy trong mạng nội bộ, agents kết nối qua local IP
+    \item \textbf{Cloud deployment}: Server triển khai trên cloud (Azure, AWS), agents kết nối qua internet
+    \item \textbf{Hybrid model}: Kết hợp cả local và cloud deployment
+    \item \textbf{Air-gapped networks}: Triển khai trong môi trường không có internet
+\end{itemize}
+
+Hệ thống Remote Control đã chứng minh tính hiệu quả trong việc cung cấp giải pháp điều khiển và giám sát từ xa toàn diện. Với kiến trúc module hóa và khả năng mở rộng, hệ thống có thể đáp ứng được nhu cầu của nhiều môi trường triển khai khác nhau.
+
